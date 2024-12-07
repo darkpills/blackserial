@@ -39,11 +39,13 @@ class PHPGGC(Serializer):
         php_functions = self.chainOpts.php_functions
         php_code = self.getFileContentOrCode(self.chainOpts.php_code)
         remote_file = self.chainOpts.remote_file
+        remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else php_code
 
         logging.info(f"System command: {system_command}")
         logging.info(f"PHP Functions: {php_functions}")
         logging.info(f"PHP Code: {php_code}")
         logging.info(f"File written on server: {remote_file}")
+        logging.info(f"Content written on server: {remote_content}")
         logging.info(f"Interact domain: {interact_domain}")
 
         # create an empty file that will contain PHP file with the payload
@@ -61,8 +63,8 @@ class PHPGGC(Serializer):
                 logging.info(f"[{chain['name']}] Generating payload of type '{chain['type']}'")
 
                 chain_system_command = system_command
-                chain_system_command = chain_system_command.replace('%chain_id%', chain['id'])
-                chain_system_command = chain_system_command.replace('%domain%', str(interact_domain))
+                chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
+                chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
                 chain_system_command = chain_system_command.replace("'", "\\'")
                 escaped_chain_system_command = chain_system_command.replace('"', '\\"')
 
@@ -76,13 +78,13 @@ class PHPGGC(Serializer):
                     chainArguments = f"'{code}'"
                 elif chain['type'] == "File write":
                     with open(fp.name, mode='w') as ft:
-                        content = php_code
-                        content = content.replace('%system_command%', chain_system_command)
-                        content = content.replace('%php_function%', php_function)
-                        content = content.replace('%domain%', interact_domain)
-                        content = content.replace('%chain_id%', chain['id'])
+                        content = remote_content
+                        content = content.replace('%%system_command%%', chain_system_command)
+                        content = content.replace('%%php_function%%', php_function)
+                        content = content.replace('%%domain%%', interact_domain)
+                        content = content.replace('%%chain_id%%', chain['id'])
                         ft.write(content)
-                    chainArguments = f"'{remote_file.replace('%ext%', 'php')}' '{fp.name}'"
+                    chainArguments = f"'{remote_file.replace('%%ext%%', 'php')}' '{fp.name}'"
                 else:
                     logging.debug(f"[{chain['name']}] Skipping unhandled chain type")
                     continue

