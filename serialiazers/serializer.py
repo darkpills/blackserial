@@ -26,14 +26,14 @@ class Serializer:
 
         if processResult.returncode == 0:
             results = processResult.stdout.decode('ascii')
-        elif processResult.stderr != None:
+        elif processResult.stderr != b'':
             results = processResult.stderr.decode('ascii')
-        elif processResult.stdout != None:
+        elif processResult.stdout != b'':
             results += processResult.stdout.decode('ascii')
         return results
 
     def exists(self):
-        out = self.exec('-h')
+        out = self.exec('-h 2>&1')
         if self.usage in out:
             return True
         else:
@@ -48,12 +48,17 @@ class Serializer:
             content = code
         return content
     
-    def createTemporaryFile(self):
+    def createTemporaryFile(self, suffix=None, dir=None):
         logging.debug(f"Creating temporary file for payload")
-        with tempfile.NamedTemporaryFile(delete=False) as tempFilePointer:
-            pass
-        logging.debug(f"Temporary file created: {tempFilePointer.name}")
-        return tempFilePointer
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir) as tempFilePointer:
+                pass
+            logging.debug(f"Temporary file created: {tempFilePointer.name}")
+            return tempFilePointer
+        except Exception as e:
+            logging.error(f"Cannot create temporary file: {e}")
+            return None
+
 
     def payload(self, chainName, chainArgs):
         return self.exec(f"{chainName} {chainArgs}", rawResult=True)

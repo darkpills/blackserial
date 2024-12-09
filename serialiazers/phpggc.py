@@ -25,14 +25,22 @@ class PHPGGC(Serializer):
             chain = match.groupdict()
             if chain['name'] == 'NAME': 
                 continue
-            chain['id'] = chain['name'].lower().replace('/', '-')
-            chains.append(chain)
+
+            chains.append({
+                'id': chain['name'].lower().replace('/', '-'),
+                'name': chain['name'],
+                'description': f"{chain['name']} {chain['type']}",
+                'type': chain['type'],
+            })
         return chains
     
     def payload(self, chainName, chainArgs):
         return self.exec(f"{self.phpggcOpts} {chainName} {chainArgs}", rawResult=True)
     
     def generate(self, chains, output):
+
+        if len(chains) == 0:
+            return 0
 
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
@@ -43,13 +51,15 @@ class PHPGGC(Serializer):
 
         logging.info(f"System command: {system_command}")
         logging.info(f"PHP Functions: {php_functions}")
-        logging.info(f"PHP Code: {php_code}")
+        logging.info(f"PHP Code: {self.chainOpts.php_code}")
         logging.info(f"File written on server: {remote_file}")
         logging.info(f"Content written on server: {remote_content}")
         logging.info(f"Interact domain: {interact_domain}")
 
         # create an empty file that will contain PHP file with the payload
-        fp = self.createTemporaryFile()
+        fp = self.createTemporaryFile(suffix='.php')
+        if fp == None:
+            return 0
         
         logging.info(f"Starting payload generation")
         count = 0
@@ -92,7 +102,10 @@ class PHPGGC(Serializer):
                 result = self.payload(chain['name'], chainArguments)
                 if result.returncode != 0:
                     logging.error(f"[{chain['name']}] Failed to create payload")
-                    logging.error(result.stderr.decode('ascii'))
+                    if result.stderr != b'':
+                        logging.error(result.stderr.decode('ascii'))
+                    if result.stdout != b'':
+                        logging.error(result.stdout.decode('ascii'))
                     continue
 
                 payload = result.stdout
