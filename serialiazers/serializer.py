@@ -2,6 +2,7 @@ import subprocess
 import tempfile
 import logging
 import os
+import sys
 
 class Serializer:
 
@@ -62,5 +63,34 @@ class Serializer:
 
     def payload(self, chainName, chainArgs):
         return self.exec(f"{chainName} {chainArgs}", rawResult=True)
+    
+    def getOutputFilepath(self, chainUniqueId):
+        output = os.path.abspath(self.chainOpts.output)
+        if self.chainOpts.one_file_per_payload:
+            if os.path.isdir(output):
+                filePath = os.path.join(output, chainUniqueId+'.txt')
+            else:
+                directory = os.path.dirname(output)
+                filename = os.path.basename(output)
+                filenameWithoutExt, extension = os.path.splitext(filename)
+                filePath = os.path.join(directory, chainUniqueId+extension)
+        else:
+            if os.path.isdir(output):
+                filePath = os.path.join(output, 'payloads.txt')
+            else:
+                filePath = output
+        return filePath
+    
+    def output(self, chainUniqueId, payload):
+        if not self.chainOpts.output or self.chainOpts.output == '-':
+            f = sys.stdout.buffer
+            f.write(payload)
+        else:
+            filePath = self.getOutputFilepath(chainUniqueId)
+            f = open(filePath, 'ab')
+            f.write(payload)
+            f.close()
+
+        
         
 

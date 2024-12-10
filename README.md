@@ -64,6 +64,16 @@ Make a unit test to see if everything is ok:
 wine ./Release/ysoserial.exe -f BinaryFormatter -g TypeConfuseDelegate -o base64 -c "ping 127.0.0.1"
 ```
 
+## Kown issues:
+
+The following gadgets fail to generate:
+* YSOSerial.net: ActivitySurrogateDisableTypeCheck
+* YSOSerial.net: PSObject 
+* YSOSerial.net: ObjRef with formatter 'ObjectStateFormatter'
+* YSOSerial.net: TypeConfuseDelegateMono
+* YSOSerial.net: XamlAssemblyLoadFromFile with formatter 'SoapFormatter'
+* PHPGGC: Symfony/RCE14
+
 ## TODO
 
 * test mode

