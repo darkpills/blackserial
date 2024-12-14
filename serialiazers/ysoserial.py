@@ -40,8 +40,9 @@ class YSOSerial(Serializer):
     def __init__(self, javaPath, jarPath, chainOpts):
         self.javaPath = javaPath
         self.jarPath = jarPath
-        self.javaVersion = 11
-        javaOpts = "--add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
+        self.javaVersion = None
+        #javaOpts = "--add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
+        javaOpts = ""
         bin = f"{javaPath} {javaOpts} -jar {jarPath}"
         super().__init__(bin, chainOpts)
 
@@ -54,13 +55,26 @@ class YSOSerial(Serializer):
         self.bin = self.javaPath
         versionOut = self.exec('-version 2>&1').split('\n')
         self.bin = binBackup
-        pattern = r"version\s+\"(?P<version>[0-9]+)\."
+        pattern = r"version\s+\"(?P<majorVersion>[0-9]+)\.(?P<minorVersion>[0-9]+)\."
         regex = re.compile(pattern)
         for line in versionOut:
-            match = regex.search(line)
+            match = regex.search(line.lower())
             if match:
-                self.javaVersion = int(match.groupdict()['version'])
+                majorVersion = int(match.groupdict()['majorVersion'])
+                minorVersion = int(match.groupdict()['minorVersion'])
+                # Exemple of formats depending on OpenJDK or Java flavor
+                # openjdk version "17.0.12" 2024-07-16
+                # java version "1.8.0_431"
+                self.javaVersion = majorVersion if majorVersion > 1 else minorVersion
+                logging.info(f"Detected java version: {self.javaVersion}")
+                logging.debug(f"Detailed version: {line}")
                 break
+        
+        if self.javaVersion == None:
+            self.javaVersion = 11
+            logging.warning("Cannot detect java version, setting default to 11, but blindly...")
+            logging.warning("\n".join(versionOut))
+
         if self.javaVersion > 11:
             logging.warning(f"Java version is not <= 11, version detected: {self.javaVersion}.")
             logging.warning("You might having errors generating payloads.")

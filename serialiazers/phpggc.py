@@ -146,6 +146,8 @@ class PHPGGC(Serializer):
 
                 if self.chainOpts.base64:
                     payload = base64.b64encode(payload)
+                elif self.chainOpts.base64_urlsafe:
+                    payload = base64.urlsafe_b64encode(payload)
                 
                 if self.chainOpts.url:
                     payload = urllib.parse.quote_plus(payload).encode('ascii')

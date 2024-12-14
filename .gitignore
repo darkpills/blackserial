@@ -3,3 +3,6 @@ ysoserial-all.jar
 blackserial-payloads.txt
 phpggc
 Release
+jre*
+jdk*
+java*
