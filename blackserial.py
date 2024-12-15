@@ -4,7 +4,7 @@ import argparse
 import sys
 import logging
 import os
-from serialiazers import *
+from serializers import *
 
 class ColorFormatter(logging.Formatter):
     grey = "\x1b[90m"
@@ -43,13 +43,13 @@ def setupLogging(no_color, verbose):
         logger.setLevel(logging.INFO)
 
 def createGenerator(serializer, args):
-    if serializer == 'phpggc':
+    if serializer == 'phpggc' or serializer == 'php':
         generator = PHPGGC(args.phpggc_path, args)
-    elif serializer == 'ysoserial':
+    elif serializer == 'ysoserial' or serializer == 'java':
         generator = YSOSerial(args.java_path, args.ysoserial_path, args)
-    elif serializer == 'pickle':
+    elif serializer == 'pickle' or serializer == 'python':
         generator = Pickle(args)
-    elif serializer == 'ysoserial.net':
+    elif serializer == 'ysoserial.net' or serializer == 'csharp':
         generator = YSOSerialNet(args.wine_path, args.ysoserial_net_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
@@ -63,6 +63,7 @@ if __name__ == '__main__':
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
     default_system_command = 'nslookup %%domain%%'
     available_serializers = ['ysoserial', 'phpggc', 'pickle', 'ysoserial.net']
+    available_languages = ['java', 'php', 'python', 'csharp']
 
     parser = argparse.ArgumentParser(prog='BlackSerial', description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     common_group = parser.add_argument_group('general options')
     common_group.add_argument('-o', '--output', help="Output payloads to file", default="payloads.txt")
     common_group.add_argument('-l', '--list', help="List payloads only", action="store_true")
-    common_group.add_argument('-s', '--serializer', help="Gadget chain serializer", choices=available_serializers + ['all'], default='phpggc')
+    common_group.add_argument('-s', '--serializer', help="Gadget chain serializer or language", choices=available_serializers + available_languages + ['all'], default='phpggc')
     common_group.add_argument('-f', '--unsafe', help="Unsafe gadget chains like File Delete", action="store_true")    
     common_group.add_argument('-n', '--no-color', help='No colored output', action="store_true")
     common_group.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")    
