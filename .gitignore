@@ -1,6 +1,6 @@
 **/__pycache__/
 ysoserial-all.jar
-blackserial-payloads.txt
+payloads*
 phpggc
 Release
 jre*
