@@ -213,7 +213,8 @@ class YSOSerialNet(Serializer):
                         payload = urllib.parse.quote_plus(payload).encode('ascii')
                 else:
                     # clean string style formatters to have 1 payload per line
-                    payload = payload.decode('ascii').replace('\r', '').replace('\n', '').encode('ascii')
+                    if not self.chainOpts.one_file_per_payload:
+                        payload = payload.decode('ascii').replace('\r', '').replace('\n', '').encode('ascii')
 
                     if self.chainOpts.url:
                         payload = urllib.parse.quote_plus(payload).encode('ascii')
