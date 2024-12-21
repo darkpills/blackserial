@@ -1,6 +1,8 @@
 #!/bin/bash
 
-cd bin
+# going into the current script directory
+CWD=`dirname $0`
+cd $CWD/bin
 
 if [ ! -d ./phpggc/ ]; then
     echo "Installing phpggc"
@@ -12,7 +14,7 @@ if [ ! -d ./phpggc/ ]; then
 fi
 
 javaVersion=`java -version 2>&1 | grep version | sed -e s#"^.*version \"\([0-9]\+\)\..*$"#"\1"#g`
-if [ "$javaVersion" == "" ] || [ $javaVersion -gt 8 ] || [ ! -f ./jre1.8.0_431/bin/java ]; then
+if [ "$javaVersion" == "" ] || [ $javaVersion -gt 8 ] && [ ! -f ./jre1.8.0_431/bin/java ]; then
     echo "Installing java 8"
     wget -q "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee" -O jre-8u431-linux-x64.tar.gz  || ( cp ../archives/jre-8u431-linux-x64.tar.gz . )
     tar -xzf jre-8u431-linux-x64.tar.gz
@@ -60,6 +62,19 @@ if [ ! -d Release ]; then
     fi
 fi
 
+
+command -v ruby >/dev/null 2>&1 || ( echo "Error: no ruby installed, install it first" && exit 1 )
+
+if [ ! -d ruby-unsafe-deserialization ]; then
+    echo "Installing ruby payloads"
+    git clone https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/ 2>&1 || (echo "Error: cannot clone ruby payloads repo" && exit 1)
+    if [ ! -d ruby-unsafe-deserialization/ ]; then
+        echo "Error: no ruby-unsafe-deserialization directory after cloning repository"
+        exit 1
+    fi
+fi
+
+command -v python3 >/dev/null 2>&1 || ( echo "Error: no python3 installed, install it first" && exit 1 )
 python3 -c "import pickle;" 2>&1 || { 
     echo "Installing pickle";
     pip3 install pickledb; 

