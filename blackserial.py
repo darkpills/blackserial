@@ -51,6 +51,8 @@ def createGenerator(serializer, args):
         generator = Pickle(args)
     elif serializer == 'ysoserial.net' or serializer == 'csharp':
         generator = YSOSerialNet(args.wine_path, args.ysoserial_net_path, args)
+    elif serializer == 'ruby':
+        generator = Ruby(args.ruby_path, args.ruby_payload_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
         generator = None
@@ -63,7 +65,7 @@ if __name__ == '__main__':
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
     default_system_command = 'nslookup %%domain%%'
     available_serializers = ['ysoserial', 'phpggc', 'pickle', 'ysoserial.net']
-    available_languages = ['java', 'php', 'python', 'csharp']
+    available_languages = ['java', 'php', 'python', 'csharp', 'ruby']
 
     parser = argparse.ArgumentParser(prog='BlackSerial', description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -93,6 +95,7 @@ if __name__ == '__main__':
     encoding_group.add_argument('-u', '--url', help="URL encodes the payload", action="store_true")
     encoding_group.add_argument('-b', '--base64', help="Base64 encode the payload", action="store_true")
     encoding_group.add_argument('-bu', '--base64-urlsafe', help="Base64 URL safe encode the payload", action="store_true")
+    encoding_group.add_argument('-x', '--hex', help="Encode the payload as hex string", action="store_true")
 
     # php specific
     phpggc_group = parser.add_argument_group('phpggc')
@@ -124,6 +127,11 @@ if __name__ == '__main__':
     net_group.add_argument('--ysoserial-net-options', help="Options to pass to YSOSerial.net command line", default="")
     net_group.add_argument('--wine-path', help="Full path to wine bin (linux only)", default="wine")
 
+    # ruby specific
+    ruby_group = parser.add_argument_group('ruby')
+    ruby_group.add_argument('--ruby-path', help="Full path to ruby bin", default="ruby")
+    ruby_group.add_argument('--ruby-payload-path', help="Full path to ruby-unsafe-deserialization directory", default="./bin/ruby-unsafe-deserialization")
+
     args = parser.parse_args()
 
     setupLogging(args.no_color, args.verbose)
@@ -140,6 +148,12 @@ if __name__ == '__main__':
     if str(args.interact_domain) == '':
         logging.warning("No interact domain provided, strongly recommanded for out of band detection")
         logging.warning(f"Use --interact-domain <mydomain> option")
+
+
+    if not args.one_file_per_payload and os.path.isfile(args.output):
+        logging.debug(f"Emptying output file {args.output}")
+        f = open(args.output, 'wb')
+        f.close()
 
     count = 0
     serializers = available_serializers if args.serializer == 'all' else [args.serializer]

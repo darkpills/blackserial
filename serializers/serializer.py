@@ -3,6 +3,8 @@ import tempfile
 import logging
 import os
 import sys
+import urllib.parse
+import base64
 
 class Serializer:
 
@@ -81,10 +83,29 @@ class Serializer:
                 filePath = output
         return filePath
     
+    def encode(self, payloadInput):
+        payload = payloadInput
+        if self.chainOpts.base64:
+            payload = base64.b64encode(payload)
+        elif self.chainOpts.base64_urlsafe:
+            payload = base64.urlsafe_b64encode(payload)
+        elif self.chainOpts.hex:
+            payload = payload.hex().encode('ascii')
+        
+        if self.chainOpts.url:
+            payload = urllib.parse.quote_plus(payload).encode('ascii')
+
+        return payload
+    
     def output(self, chainUniqueId, payload):
         if not self.chainOpts.output or self.chainOpts.output == '-':
             f = sys.stdout.buffer
             f.write(payload)
+        elif self.chainOpts.one_file_per_payload:
+            filePath = self.getOutputFilepath(chainUniqueId)
+            f = open(filePath, 'wb')
+            f.write(payload)
+            f.close()
         else:
             filePath = self.getOutputFilepath(chainUniqueId)
             f = open(filePath, 'ab')

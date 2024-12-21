@@ -2,7 +2,6 @@ import re
 import logging
 import urllib.parse
 import os
-import base64
 from .serializer import Serializer
 
 class YSOSerialNet(Serializer):
@@ -203,14 +202,7 @@ class YSOSerialNet(Serializer):
                 
                 # binary formatters can be encoded
                 if formatter in self.binaryFormatters:
-
-                    if self.chainOpts.base64:
-                        payload = base64.b64encode(payload)
-                    elif self.chainOpts.base64_urlsafe:
-                        payload = base64.urlsafe_b64encode(payload)
-                    
-                    if self.chainOpts.url:
-                        payload = urllib.parse.quote_plus(payload).encode('ascii')
+                    payload = self.encode(payload)
                 else:
                     # clean string style formatters to have 1 payload per line
                     if not self.chainOpts.one_file_per_payload:

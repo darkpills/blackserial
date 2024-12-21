@@ -2,7 +2,6 @@
 import os
 import logging
 import urllib.parse
-import base64
 import importlib.util
 import socket
 import urllib.request
@@ -58,37 +57,20 @@ class Pickle(Serializer):
 
     def __init__(self, args):
         super().__init__('', args)
-        self.gadgets.append({
-            'id': 'PickleSystemCommand',
-            'name': 'PickleSystemCommand',
-            'description': 'PickleSystemCommand: <system_command>',
-            'format': '<system_command>'
-        })
-        self.gadgets.append({
-            'id': 'PickleCode',
-            'name': 'PickleCode',
-            'description': 'PickleCode: <code>',
-            'format': '<code>'
-        })
-        self.gadgets.append({
-            'id': 'PickleDNS',
-            'name': 'PickleDNS',
-            'description': 'PickleDNS: <domain>',
-            'format': '<domain>'
-        })
-        self.gadgets.append({
-            'id': 'PickleHttpGet',
-            'name': 'PickleHttpGet',
-            'description': 'PickleHttpGet: <url>',
-            'format': '<url>'
-        })
-        self.gadgets.append({
-            'id': 'PickleFileWrite',
-            'name': 'PickleFileWrite',
-            'description': 'PickleFileWrite: <remote_file>;<content>',
-            'format': '<remote_file>;<content>'
-        })
 
+        self.addGadget('PickleSystemCommand', '<system_command>')
+        self.addGadget('PickleCode', '<code>')
+        self.addGadget('PickleDNS', '<domain>')
+        self.addGadget('PickleHttpGet', '<url>')
+        self.addGadget('PickleFileWrite', '<remote_file>;<content>')
+
+    def addGadget(self, name, format):
+        self.gadgets.append({
+            'id': name,
+            'name': name,
+            'description': f'{name}: {format}',
+            'format': format
+        })
 
     def exists(self):
         spam_spec = importlib.util.find_spec("pickle")
@@ -177,13 +159,7 @@ class Pickle(Serializer):
 
             logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
-            if self.chainOpts.base64:
-                payload = base64.b64encode(payload)
-            elif self.chainOpts.base64_urlsafe:
-                    payload = base64.urlsafe_b64encode(payload)
-            
-            if self.chainOpts.url:
-                payload = urllib.parse.quote_plus(payload).encode('ascii')
+            payload = self.encode(payload)
             
             self.output(chain['id'], payload+b"\n")
             count = count + 1

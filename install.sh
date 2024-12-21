@@ -4,7 +4,7 @@ cd bin
 
 if [ ! -d ./phpggc/ ]; then
     echo "Installing phpggc"
-    git clone https://github.com/ambionics/phpggc 2>&1 || (cp ../archives/phpggc.tar.gz . && tar -xzf phpggc.tar.gz)
+    git clone https://github.com/ambionics/phpggc 2>&1 || (echo "Error: cannot clone phpggc" && exit 1)
     if [ ! -f ./phpggc/phpggc ]; then
         echo "Error: no phpggc binary after cloning repository"
         exit 1

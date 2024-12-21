@@ -1,6 +1,5 @@
 import re
 import logging
-import urllib.parse
 import os
 import base64
 from .serializer import Serializer
@@ -222,13 +221,7 @@ class YSOSerial(Serializer):
 
                 logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
-                if self.chainOpts.base64:
-                    payload = base64.b64encode(payload)
-                elif self.chainOpts.base64_urlsafe:
-                    payload = base64.urlsafe_b64encode(payload)
-                
-                if self.chainOpts.url:
-                    payload = urllib.parse.quote_plus(payload).encode('ascii')
+                payload = self.encode(payload)
                 
                 if len(chain['formats']) > 1:
                     chainUniqueId = f"{chain['id']}_{chain['formats'].index(format)}"
