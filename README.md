@@ -1,5 +1,7 @@
 # BlackSerial
 
+![logo](blackserial.png)
+
 A **Blackbox pentesting Gadget Chain Serializer** for Java ([YSOSerial](https://github.com/frohoff/ysoserial)), PHP ([PHPGGC](https://github.com/ambionics/phpggc)), Python ([Pickle](https://docs.python.org/3/library/pickle.html)), C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial)), Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/)).
 
 BlackSerial is a python wrapper for different gadget chain serializers. It is designed to be used during Blackbox pentesting or Bugbounty where you suspect a deserialisation user input but you don't have the code to identify or craft a gadget chain.
@@ -33,7 +35,7 @@ List all supported gadget chains:
 python3 blackserial.py -s all -l
 ```
 
-Generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup %chain_id%.%%domain%%` system command (default command):
+Generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup <chain_id>.<domain>` system command (default command):
 ```
 python3 blackserial.py -s php -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
 ```
