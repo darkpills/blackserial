@@ -74,7 +74,7 @@ if __name__ == '__main__':
     common_group = parser.add_argument_group('general options')
     common_group.add_argument('-o', '--output', help="Output payloads to file", default="payloads.txt")
     common_group.add_argument('-l', '--list', help="List payloads only", action="store_true")
-    common_group.add_argument('-s', '--serializer', help="Gadget chain serializer or language", choices=available_serializers + available_languages + ['all'], default='phpggc')
+    common_group.add_argument('-s', '--serializer', help="Serializer or language", choices=available_serializers + available_languages + ['all'], default='phpggc')
     common_group.add_argument('-f', '--unsafe', help="Unsafe gadget chains like File Delete", action="store_true")    
     common_group.add_argument('-n', '--no-color', help='No colored output', action="store_true")
     common_group.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")    

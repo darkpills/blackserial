@@ -135,6 +135,13 @@ class Ruby(Serializer):
 
             # binary formatters can be encoded
             if chain['formatter'] == 'binary':
+                # output of binary ruby payload is hexdump and this is the last line
+                # there is print garbadge at the beginning
+                # browse output backwards
+                for line in reversed(payload.split(b'\n')):
+                    if line.strip() != b'':
+                        payload = bytes.fromhex(line.decode())
+                        break
                 payload = self.encode(payload)
             else:
                 # clean string style formatters to have 1 payload per line
