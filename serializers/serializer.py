@@ -72,10 +72,12 @@ class Serializer:
             if os.path.isdir(output):
                 filePath = os.path.join(output, chainUniqueId+'.txt')
             else:
-                directory = os.path.dirname(output)
-                filename = os.path.basename(output)
-                filenameWithoutExt, extension = os.path.splitext(filename)
-                filePath = os.path.join(directory, chainUniqueId+extension)
+                logging.error("You must provide an output directory path if you choose 1 file by payload")
+                sys.exit(1)
+                # directory = os.path.dirname(output)
+                # filename = os.path.basename(output)
+                # filenameWithoutExt, extension = os.path.splitext(filename)
+                # filePath = os.path.join(directory, chainUniqueId+extension)
         else:
             if os.path.isdir(output):
                 filePath = os.path.join(output, 'payloads.txt')

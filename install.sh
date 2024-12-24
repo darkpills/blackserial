@@ -4,6 +4,8 @@
 CWD=`dirname $0`
 cd $CWD/bin
 
+command -v php >/dev/null 2>&1 || ( echo "Error: php not installed, install it first" && exit 1 )
+
 if [ ! -d ./phpggc/ ]; then
     echo "Installing phpggc"
     git clone https://github.com/ambionics/phpggc 2>&1 || (echo "Error: cannot clone phpggc" && exit 1)
@@ -27,7 +29,7 @@ fi
 if [ ! -f ysoserial-all.jar ]; then
     echo "Installing ysoserial"
     wget -q https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar  || cp ../archives/ysoserial-all.jar .
-    echo "Ysoserial already installed"
+    echo "Ysoserial installed"
 fi
 
 command -v wine >/dev/null 2>&1 || {
@@ -38,8 +40,8 @@ command -v wine >/dev/null 2>&1 || {
         apt install mono-complete wine winetricks -y
     fi
     if [ "$DISPLAY" != "" ]; then
-        winetricks dotnet48
-        winetricks nocrashdialog
+        winetricks -q dotnet48
+        winetricks -q nocrashdialog
     else
         echo "warning: no display available, install dotnet48 manually"
     fi
@@ -55,7 +57,7 @@ if [ ! -d Release ]; then
     else
         cp ../archives/ysoserial-*.zip .
     fi
-    unzip ysoserial-*.zip
+    unzip -q ysoserial-*.zip
     if [ ! -f ./Release/ysoserial.exe ]; then
         echo "Error: no ysoserial.exe binary after unziping ysoserial.net zip"
         exit 1
@@ -63,7 +65,7 @@ if [ ! -d Release ]; then
 fi
 
 
-command -v ruby >/dev/null 2>&1 || ( echo "Error: no ruby installed, install it first" && exit 1 )
+command -v ruby >/dev/null 2>&1 || ( echo "Error: ruby not installed, install it first" && exit 1 )
 
 if [ ! -d ruby-unsafe-deserialization ]; then
     echo "Installing ruby payloads"
@@ -74,7 +76,7 @@ if [ ! -d ruby-unsafe-deserialization ]; then
     fi
 fi
 
-command -v python3 >/dev/null 2>&1 || ( echo "Error: no python3 installed, install it first" && exit 1 )
+command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1 || ( echo "Error: python3 not installed, install it first" && exit 1 )
 python3 -c "import pickle;" 2>&1 || { 
     echo "Installing pickle";
     pip3 install pickledb; 

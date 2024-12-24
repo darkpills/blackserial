@@ -47,7 +47,7 @@ class PHPGGC(Serializer):
                 continue
 
             chains.append({
-                'id': chain['name'].replace('/', ''),
+                'id': chain['name'].replace('/', '').lower(),
                 'name': chain['name'],
                 'description': f"{chain['name']}: {chain['type']}",
                 'type': chain['type'],
@@ -68,7 +68,7 @@ class PHPGGC(Serializer):
         interact_domain = self.chainOpts.interact_domain
         php_function = self.chainOpts.php_function
         php_code = self.getFileContentOrCode(self.chainOpts.php_code)
-        remote_file_to_read = self.chainOpts.remote_file_to_read
+        remote_file_to_read = "/etc/hosts" if self.chainOpts.remote_file_to_read is None else self.chainOpts.remote_file_to_read
         remote_file_to_write = self.chainOpts.remote_file_to_write
         remote_file_to_delete = self.chainOpts.remote_file_to_delete
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else php_code

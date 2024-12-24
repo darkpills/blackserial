@@ -1,6 +1,5 @@
 **/__pycache__/
-ysoserial-all.jar
 payloads*
-phpggc
-Release
 bin/*
+tmp*
+*.cache

