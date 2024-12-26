@@ -142,14 +142,12 @@ class Ruby(Serializer):
                     if line.strip() != b'':
                         payload = bytes.fromhex(line.decode())
                         break
-                payload = self.encode(payload)
             else:
                 # clean string style formatters to have 1 payload per line
                 if not self.chainOpts.one_file_per_payload:
                     payload = payload.decode('ascii').replace('\r', '').replace('\n', '').encode('ascii')
 
-                if self.chainOpts.url:
-                    payload = urllib.parse.quote_plus(payload).encode('ascii')
+            payload = self.encode(payload)
             
             self.output(chain['id'], payload+b"\n")
             count = count + 1

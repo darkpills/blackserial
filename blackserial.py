@@ -96,6 +96,7 @@ if __name__ == '__main__':
     encoding_group.add_argument('-u', '--url', help="URL encodes the payload", action="store_true")
     encoding_group.add_argument('-b', '--base64', help="Base64 encode the payload", action="store_true")
     encoding_group.add_argument('-bu', '--base64-urlsafe', help="Base64 URL safe encode the payload", action="store_true")
+    encoding_group.add_argument('-j', '--json', help="JSON encode the payload", action="store_true")
     encoding_group.add_argument('-x', '--hex', help="Encode the payload as hex string", action="store_true")
 
     # php specific

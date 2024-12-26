@@ -5,6 +5,7 @@ import os
 import sys
 import urllib.parse
 import base64
+import json
 
 class Serializer:
 
@@ -93,6 +94,8 @@ class Serializer:
             payload = base64.urlsafe_b64encode(payload)
         elif self.chainOpts.hex:
             payload = payload.hex().encode('ascii')
+        elif self.chainOpts.json:
+            payload = json.dumps("".join([chr(c) for c in payload]))[1:-1].encode('ascii')
         
         if self.chainOpts.url:
             payload = urllib.parse.quote_plus(payload).encode('ascii')

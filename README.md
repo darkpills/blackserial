@@ -18,7 +18,7 @@ This tool implement or invent no new technique. It is just a mashup of different
 * Supported serializers: PHPGGC (PHP), YSOSerial (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization)
 * Out of band execution detection first with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
 * Standardized cli interface for all serializers
-* Supported encodings: Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`
+* Supported encodings: Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`, JSON string `-j`,  
 * Isolates unsafe gadgets that delete files with `--unsafe` option
 * Can generates all payloads in 1 file and remove line feed `\n` of non binary chains (json, yaml, xml) when put in 1 file
 * Can generate 1 file by payload with `-o1` in the format `<chain_name>.txt`. Usefull when you have non binary gadget chains like json, yaml, xml
@@ -55,9 +55,9 @@ Same with C# with 1 file by payload:
 python3 blackserial.py -s csharp -bu -o1 --output ./payloads-dir/ -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
 
-An example with ruby:
+An example with ruby with json encoded string:
 ```
-python3 blackserial.py -s ruby -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
+python3 blackserial.py -s ruby -j -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
 
 ## Advanced examples
@@ -179,9 +179,9 @@ Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. 
 ## TODO
 
 * manage phar
-* plugins
 * docker
-* https://pyro4.readthedocs.io/en/stable/api/util.html
+* resx
+* https://github.com/mbechler/marshalsec
 
 
 ## ⚠️ WARNING: LEGAL DISCLAIMER
