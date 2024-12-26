@@ -47,12 +47,13 @@ class PHPGGC(Serializer):
                 continue
 
             chains.append({
-                'id': chain['name'].replace('/', '').lower(),
+                'id': chain['name'].replace('/', '-').lower(),
                 'name': chain['name'],
                 'description': f"{chain['name']}: {chain['type']}",
                 'type': chain['type'],
                 'formats': self.payloadFormats[chain['type']],
                 'unsafe': chain['type'] in self.unsafePayloads,
+                'vector': chain['vector'],
             })
         return chains
     
@@ -62,6 +63,10 @@ class PHPGGC(Serializer):
     def generate(self, chains):
 
         if len(chains) == 0:
+            return 0
+        
+        if self.chainOpts.phar and not os.path.isdir(self.chainOpts.output):
+            logging.error(f"{self.chainOpts.output} is not a directory. You must specify a directory in output when you generate phar payloads")
             return 0
 
         system_command = self.chainOpts.system_command
@@ -96,6 +101,10 @@ class PHPGGC(Serializer):
                 logging.debug(f"[{chain['name']}] Skipping unsafe chain of '{chain['type']}'")
                 continue
 
+            if self.chainOpts.phar and not chain['vector'] in ['__destruct', '__wakeup']:
+                logging.debug(f"[{chain['name']}] Skipping chain of vector '{chain['vector']}' not compatible with phar format")
+                continue
+
             # generate payload for each chain
             for format in chain['formats']:
 
@@ -104,6 +113,11 @@ class PHPGGC(Serializer):
                 if ('<url>' in format or '<domain>' in format) and not interact_domain:
                     logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires an interact domain")
                     continue
+                
+                if len(chain['formats']) > 1:
+                    chainUniqueId = f"{chain['id']}_{chain['formats'].index(format)}"
+                else:
+                    chainUniqueId = chain['id']
 
                 chain_system_command = system_command
                 chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
@@ -130,6 +144,14 @@ class PHPGGC(Serializer):
 
                 with open(fp.name, mode='w') as ft:
                     ft.write(content)
+
+                if self.chainOpts.phar == 'jpg':
+                    jpgPath = os.path.join(self.chainOpts.output, chainUniqueId +".jpg")
+                    templateJpgPath =  os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../blackserial.jpg'))
+                    chainArguments = f"{chainArguments} --phar tar --phar-jpeg {templateJpgPath} -o '{jpgPath}'"
+                elif self.chainOpts.phar:
+                    pharPath = os.path.join(self.chainOpts.output, chainUniqueId +".phar")
+                    chainArguments = f"{chainArguments} --phar {self.chainOpts.phar} -o '{pharPath}'"
                 
                 result = self.payload(chain['name'], chainArguments)
                 if result.returncode != 0:
@@ -144,13 +166,12 @@ class PHPGGC(Serializer):
                 
                 logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
-                payload = self.encode(payload)
 
-                if len(chain['formats']) > 1:
-                    chainUniqueId = f"{chain['id']}_{chain['formats'].index(format)}"
-                else:
-                    chainUniqueId = chain['id']
-                self.output(chainUniqueId, payload+b"\n")
+                if not self.chainOpts.phar:
+                    payload = self.encode(payload)
+
+                    self.output(chainUniqueId, payload+b"\n")
+
                 count = count + 1    
             
         # cleanup temp file
