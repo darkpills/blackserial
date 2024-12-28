@@ -184,10 +184,10 @@ class Marshalsec(Serializer):
                 logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
                 # binary output can be encoded
-                if not chain['name'] in self.binaryMarshalers:
+                if not chain['name'] in self.binaryMarshalers and not gadget in self.binaryMarshalers:
                     # clean string style formatters to have 1 payload per line
                     if not self.chainOpts.one_file_per_payload:
-                        payload = payload.decode('ascii').replace('\r', '').replace('\n', '').encode('ascii')
+                        payload = payload.decode('utf-8').replace('\r', '').replace('\n', '').encode('utf-8')
                 
                 chainUniqueId = f"{chain['id']}_{gadget.lower()}"
                 self.output(chainUniqueId, payload+b"\n")

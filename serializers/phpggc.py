@@ -54,6 +54,7 @@ class PHPGGC(Serializer):
                 'formats': self.payloadFormats[chain['type']],
                 'unsafe': chain['type'] in self.unsafePayloads,
                 'vector': chain['vector'],
+                'output': 'binary',
             })
         return chains
     

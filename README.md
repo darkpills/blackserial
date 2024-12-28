@@ -6,9 +6,9 @@ A **Blackbox pentesting Gadget Chain Serializer** for Java ([YSOSerial](https://
 
 BlackSerial is a python wrapper for different gadget chain serializers. It is designed to be used during Blackbox pentesting or Bugbounty where you suspect a deserialisation user input but you don't have the code to identify or craft a gadget chain.
 
-Its first objective is not to make the full RCE exploitation, but only to identify working gadget chain on a blackbox code base. **It prioritizes out of band interact/collaborator dns callback**. You can detect the good gadget chain by putting `%%chain_id%%` in your payload for instance. Then use directly the serializer.
+Its first objective is not to make the full RCE exploitation, but only to identify working gadget chain on a blackbox code base. It prioritizes out of band interact/collaborator dns callback. You can detect the good gadget chain by putting `%%chain_id%%` in your payload for instance. Then use directly the serializer.
 
-It attempts to generate all possible chains, managing the 🤯 **burden of the different chains input formats** 🤯 and tools. You may have experienced it if you tried to write a simple bash script to iterate over all the gadget chains supported by the tool. It outputs the results in a file so it can be used directly in Burp Intruder for instance.
+It attempts to generate all possible chains, managing the 🤯 burden of the different chains input formats and tools. You may have experienced it if you tried to write a simple bash script to iterate over all the gadget chains supported by the tool. It outputs the results in a file so it can be used directly in Burp Intruder for instance.
 
 This tool implement or invent no new technique. It is just a mashup of different tools.
 
@@ -90,14 +90,14 @@ python3 blackserial.py -s php -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
 
 ## Docker install
 
-Build the docker image:
+Build the docker image (go take a long coffee...):
 ```
 docker build --tag=blackserial:latest .
 ```
 
-Run it:
+Run it: example:
 ```
-docker run -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro blackserial:latest -s all -v -i domain.fr
+docker run -it --rm blackserial:latest -s all -v -i domain.fr
 ```
 
 ## Script local install
@@ -138,7 +138,29 @@ Download last release from officiel repo: https://github.com/frohoff/ysoserial/r
 wget https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar
 ```
 
-Put `ysoserial-all.jar` in the same directory as `blackserial.py`
+Put `ysoserial-all.jar` in the `bin` directory
+
+### ysoserial
+
+Install JRE8 in a local directory:
+```
+cd bin
+wget "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee" -O jre-8u431-linux-x64.tar.gz
+tar -xzf jre-8u431-linux-x64.tar.gz
+```
+
+Clone repository and build it:
+```
+git clone https://github.com/mbechler/marshalsec
+cd marshalsec
+mvn clean package -DskipTests
+cp ./target/marshalsec-all.jar ../
+```
+
+Test it:
+```
+../bin/jre1.8.0_431/bin/java -cp ./target/marshalsec-all.jar  marshalsec.Java
+```
 
 ## pickle
 
@@ -188,7 +210,7 @@ Lots of ysoserial payloads need at least JRE 11 and some JRE 8. It is better to 
 
 ## Why ysoserial\.net generation is so slow?
 
-Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. Should not be the case under Windows.
+Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. It may be quicker under Windows.
 
 ## Some gadgets fail to generate
 
@@ -202,7 +224,8 @@ Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. 
 
 ## TODO
 
-* resx
+* resx file generation support
+* output format filter: xml, json, yaml, binary
 
 
 ## ⚠️ WARNING: LEGAL DISCLAIMER

@@ -42,9 +42,11 @@ command -v wine >/dev/null 2>&1 || {
     echo "Installing wine, .net framework 4.8"
     if [ "$EUID" -ne 0 ]; then
         sudo dpkg --add-architecture i386
+        sudo apt update -y
         sudo apt install  --install-recommends mono-complete wine winetricks -y
     else
         dpkg --add-architecture i386
+        apt update -y
         apt install --install-recommends mono-complete wine winetricks -y
     fi
     winetricks -q dotnet48
