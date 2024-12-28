@@ -321,6 +321,7 @@ class YSOSerialNet(Serializer):
                     # binary formatters or plugin output can be encoded
                     if formatter in self.binaryFormattersOrPlugins or plugin in self.binaryFormattersOrPlugins:
                         if not binPayloadGenerated:
+                            logging.debug(f"[{chain['name']}] Writing the first binary payload found for plugin use")
                             with open(fb.name, mode='wb') as ft:
                                 ft.write(payload)
                                 binPayloadGenerated = True

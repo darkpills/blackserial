@@ -36,8 +36,8 @@ class Serializer:
             results += processResult.stdout.decode('ascii')
         return results
 
-    def exists(self):
-        out = self.exec('-h 2>&1')
+    def exists(self, help='-h 2>&1'):
+        out = self.exec(help)
         if self.usage in out:
             return True
         else:

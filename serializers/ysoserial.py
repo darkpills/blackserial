@@ -42,7 +42,7 @@ class YSOSerial(Serializer):
         self.javaVersion = None
         #javaOpts = "--add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED"
         javaOpts = ""
-        bin = f"{javaPath} {javaOpts} -jar {jarPath}"
+        bin = f"'{javaPath}' {javaOpts} -jar '{jarPath}'"
         super().__init__(bin, chainOpts)
 
     def exists(self):

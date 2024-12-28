@@ -26,6 +26,12 @@ if [ "$javaVersion" == "" ] || [ $javaVersion -gt 8 ] && [ ! -f ./jre1.8.0_431/b
     fi
 fi
 
+if [ ! -f marshalsec-all.jar ]; then
+    echo "Installing Marshalsec"
+    cp ../archives/marshalsec-0.0.3-SNAPSHOT-all.jar marshalsec-all.jar
+    echo "Marshalsec installed"
+fi
+
 if [ ! -f ysoserial-all.jar ]; then
     echo "Installing ysoserial"
     wget -q https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar  || cp ../archives/ysoserial-all.jar .
@@ -35,16 +41,14 @@ fi
 command -v wine >/dev/null 2>&1 || {
     echo "Installing wine, .net framework 4.8"
     if [ "$EUID" -ne 0 ]; then
-        sudo apt install mono-complete wine winetricks -y
+        sudo dpkg --add-architecture i386
+        sudo apt install  --install-recommends mono-complete wine winetricks -y
     else
-        apt install mono-complete wine winetricks -y
+        dpkg --add-architecture i386
+        apt install --install-recommends mono-complete wine winetricks -y
     fi
-    if [ "$DISPLAY" != "" ]; then
-        winetricks -q dotnet48
-        winetricks -q nocrashdialog
-    else
-        echo "warning: no display available, install dotnet48 manually"
-    fi
+    winetricks -q dotnet48
+    winetricks -q nocrashdialog
 }
 
 if [ ! -d Release ]; then

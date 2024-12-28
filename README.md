@@ -2,7 +2,7 @@
 
 ![logo](blackserial.png)
 
-A **Blackbox pentesting Gadget Chain Serializer** for Java ([YSOSerial](https://github.com/frohoff/ysoserial)), PHP ([PHPGGC](https://github.com/ambionics/phpggc)), Python ([Pickle](https://docs.python.org/3/library/pickle.html)), C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial)), Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/)).
+A **Blackbox pentesting Gadget Chain Serializer** for Java ([YSOSerial](https://github.com/frohoff/ysoserial), [Marshalsec](https://github.com/mbechler/marshalsec)), PHP ([PHPGGC](https://github.com/ambionics/phpggc)), Python ([Pickle](https://docs.python.org/3/library/pickle.html)), C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial)), Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/)).
 
 BlackSerial is a python wrapper for different gadget chain serializers. It is designed to be used during Blackbox pentesting or Bugbounty where you suspect a deserialisation user input but you don't have the code to identify or craft a gadget chain.
 
@@ -15,7 +15,7 @@ This tool implement or invent no new technique. It is just a mashup of different
 ## Features
 
 * Generates around 200 gadget chains in a "best effort" approach with default options and all possible formatters
-* Supported serializers: PHPGGC (PHP), YSOSerial (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization)
+* Supported serializers: PHPGGC (PHP), YSOSerial (Java), Marshalsec (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization)
 * Out of band execution detection first with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
 * Standardized cli interface for all serializers
 * Supported encodings: Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`, JSON string `-j`,  
@@ -23,6 +23,7 @@ This tool implement or invent no new technique. It is just a mashup of different
 * Can generates all payloads in 1 file and remove line feed `\n` of non binary chains (json, yaml, xml) when put in 1 file
 * Can generate 1 file by payload with `-o1` in the format `<chain_name>.txt`. Usefull when you have non binary gadget chains like json, yaml, xml
 * Can generates 1 gadget chain only by its name
+* Phar output support
 * Add custom serializers options with `--phpggc-options`, `--ysoserial-options` and `--ysoserial-net-options`
 * Provides 5 custom pickle byte-code (it's not really a chain for pickle, more direct byte-code)
 
@@ -89,20 +90,35 @@ python3 blackserial.py -s php -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b
 
 ## Docker install
 
-TODO
+Build the docker image:
+```
+docker build --tag=blackserial:latest .
+```
+
+Run it:
+```
+docker run -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro blackserial:latest -s all -v -i domain.fr
+```
 
 ## Script local install
 
+Launch the following script locally. Warning: this will install wine and mono which requires space:
 ```
 ./install.sh
 ```
 
-## Manual install
-
 Offline installation of dependencies are provided in the `./archives` directory. Git repository are not provided.
+
+## Manual install
 
 ### phpggc
 
+Install php:
+```
+sudo apt install php
+```
+
+Clone repository:
 ```
 cd bin
 git clone https://github.com/ambionics/phpggc
@@ -136,7 +152,8 @@ pip3 install pickledb
 Under debian linux, use wine:
 ```
 sudo apt update 
-sudo apt install mono-complete wine winetricks -y
+sudo dpkg --add-architecture i386
+sudo apt install --install-recommends mono-complete wine winetricks
 winetricks dotnet48
 winetricks nocrashdialog
 ```
@@ -152,6 +169,12 @@ wine ./bin/Release/ysoserial.exe -f BinaryFormatter -g TypeConfuseDelegate -o ba
 
 ### ruby
 
+Install ruby:
+```
+sudo apt install ruby
+```
+
+Clone repository:
 ```
 cd bin
 git clone https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/
@@ -175,13 +198,11 @@ Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. 
 * ysoserial\.net: TypeConfuseDelegateMono
 * ysoserial\.net: XamlAssemblyLoadFromFile with formatter 'SoapFormatter'
 * phpggc: Symfony/RCE14 (PR opened)
+* marshalsec: ServiceLoader
 
 ## TODO
 
-* manage phar
-* docker
 * resx
-* https://github.com/mbechler/marshalsec
 
 
 ## ⚠️ WARNING: LEGAL DISCLAIMER
