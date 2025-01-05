@@ -29,6 +29,27 @@ class Marshalsec(Serializer):
         'YAMLBeans': ['C3P0WrapperConnPool']
     }
 
+    marshalersFormats = {
+        'BlazeDSAMF0': 'binary',
+        'BlazeDSAMF3': 'binary',
+        'BlazeDSAMFX': 'xml',
+        'Hessian': 'binary',
+        'Hessian2': 'binary',
+        'Burlap': 'xml',
+        'Castor': 'xml',
+        'Jackson': 'json',
+        'Java': 'binary',
+        'JsonIO': 'json',
+        'JYAML': 'yaml',
+        'Kryo': 'binary',
+        'KryoAltStrategy': 'binary',
+        'Red5AMF0': 'binary',
+        'Red5AMF3': 'binary',
+        'SnakeYAML': 'yaml',
+        'XStream': 'xml',
+        'YAMLBeans': 'yaml',
+    }
+
     payloadFormats = {
         'SpringPropertyPathFactory': "'<jndiUrl>'",
         'C3P0WrapperConnPool': "'<codebase>' '<class>'",
@@ -53,18 +74,6 @@ class Marshalsec(Serializer):
         'ResourceGadget': "'<codebase>' '<classname>'",
 
     }
-
-    binaryMarshalers = [
-        'BlazeDSAMF0',
-        'BlazeDSAMF3',
-        'Hessian',
-        'Hessian2',
-        'Java',
-        'Kryo',
-        'KryoAltStrategy',
-        'Red5AMF0',
-        'Red5AMF3',
-    ]
 
 
     def __init__(self, javaPath, jarPath, chainOpts):
@@ -121,6 +130,7 @@ class Marshalsec(Serializer):
                 'name': marshaler,
                 'description': f"{marshaler}: {' | '.join(gadgets)}",
                 'gadgets': gadgets,
+                'output': self.marshalersFormats[marshaler],
             })
             
         return chains
@@ -142,6 +152,10 @@ class Marshalsec(Serializer):
         # generate payload for each chain
         count = 0
         for chain in chains:
+
+            if self.chainOpts.format != None and self.chainOpts.format != chain['output']:
+                logging.debug(f"[{chain['name']}] Skipping chain of format '{chain['output']}'")
+                continue
 
             for gadget in chain['gadgets']:
 
@@ -184,7 +198,7 @@ class Marshalsec(Serializer):
                 logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
                 # binary output can be encoded
-                if not chain['name'] in self.binaryMarshalers and not gadget in self.binaryMarshalers:
+                if chain['output'] != 'binary':
                     # clean string style formatters to have 1 payload per line
                     if not self.chainOpts.one_file_per_payload:
                         payload = payload.decode('utf-8').replace('\r', '').replace('\n', '').encode('utf-8')

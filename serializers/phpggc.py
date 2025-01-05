@@ -98,6 +98,10 @@ class PHPGGC(Serializer):
         count = 0
         for chain in chains:
 
+            if self.chainOpts.format != None and self.chainOpts.format != chain['output']:
+                logging.debug(f"[{chain['name']}] Skipping chain of format '{chain['output']}'")
+                continue
+
             if chain['unsafe'] and not self.chainOpts.unsafe:
                 logging.debug(f"[{chain['name']}] Skipping unsafe chain of '{chain['type']}'")
                 continue

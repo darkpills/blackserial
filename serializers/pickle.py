@@ -79,7 +79,8 @@ class Pickle(Serializer):
             'id': name.lower(),
             'name': name,
             'description': f'{name}: {format}',
-            'format': format
+            'format': format,
+            'output': 'binary',
         })
 
     def exists(self):
@@ -132,6 +133,10 @@ class Pickle(Serializer):
         for chain in chains:
 
             format = chain['format']
+
+            if self.chainOpts.format != None and self.chainOpts.format != chain['output']:
+                logging.debug(f"[{chain['name']}] Skipping chain of format '{chain['output']}'")
+                continue
 
             if ('<url>' in format or '<domain>' in format) and not interact_domain:
                 logging.warning(f"[{chain['name']}] Skipping payload with format {format} because it requires an interact domain")

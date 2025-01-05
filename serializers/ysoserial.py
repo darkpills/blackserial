@@ -106,6 +106,7 @@ class YSOSerial(Serializer):
                 'name': chain['name'],
                 'description': f"{chain['name']}: {' | '.join(formats)}",
                 'formats': formats,
+                'output': 'binary',
             })
             
         return chains
@@ -143,6 +144,10 @@ class YSOSerial(Serializer):
         # generate payload for each chain
         count = 0
         for chain in chains:
+
+            if self.chainOpts.format != None and self.chainOpts.format != chain['output']:
+                logging.debug(f"[{chain['name']}] Skipping chain of format '{chain['output']}'")
+                continue
 
             for format in chain['formats']:
 

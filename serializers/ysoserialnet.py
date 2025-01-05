@@ -64,13 +64,29 @@ class YSOSerialNet(Serializer):
         ]
     }
 
-    binaryFormattersOrPlugins = [
-        'BinaryFormatter', 
-        'MessagePackTypeless',
-        'MessagePackTypelessLz4',
-        'SharpSerializerBinary',
-        'TransactionManagerReenlist'
-    ]
+    formattersFormat = {
+        'BinaryFormatter': 'binary',
+        'MessagePackTypeless': 'binary',
+        'MessagePackTypelessLz4': 'binary',
+        'SharpSerializerBinary': 'binary',
+        'TransactionManagerReenlist': 'binary',
+        'LosFormatter': 'base64',
+        'Json.Net': 'json',
+        'JavaScriptSerializer.txt': 'json',
+        'FastJson': 'json',
+        'FsPickler': 'json',
+        'YamlDotNet': 'yaml',
+        'NetDataContractSerializer': 'xml',
+        'DataContractSerializer': 'xml',
+        'SoapFormatter': 'xml',
+        'Xaml': 'xml',
+        'ApplicationTrust': 'xml',
+        'XmlSerializer': 'xml',
+        'SessionSecurityTokenHandler': 'xml',
+        'SharpSerializerXml': 'xml',
+        'Sharepoint': 'xml',
+        'DotNetNuke': 'xml',
+    }
 
     def __init__(self, winePath, exePath, chainOpts):
         self.winePath = winePath
@@ -182,7 +198,7 @@ class YSOSerialNet(Serializer):
                     'type': chainType,
                     'description': f"{chain['name']}",
                     'formats':  formats,
-                    'formatters': ['NoFormatter']
+                    'formatters': ['NoFormatter'],
                 }
 
             match = formattersRegex.search(line)
@@ -253,8 +269,19 @@ class YSOSerialNet(Serializer):
 
                 for format in chain['formats']:
 
+                    if formatter in self.formattersFormat:
+                        outputFormat = self.formattersFormat[formatter]
+                    elif plugin in self.formattersFormat:
+                        outputFormat = self.formattersFormat[plugin]
+                    else:
+                        outputFormat = 'binary'
+
                     if formatters_filters != None and formatter not in formatters_filters:
                         logging.debug(f"[{chain['name']}] Skipping formatter '{formatter}'")
+                        continue
+
+                    if self.chainOpts.format != None and self.chainOpts.format != outputFormat:
+                        logging.debug(f"[{chain['name']}] Skipping chain of format '{outputFormat}'")
                         continue
 
                     if '<url>' in format and not interact_domain:
@@ -319,7 +346,7 @@ class YSOSerialNet(Serializer):
                     logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
                     
                     # binary formatters or plugin output can be encoded
-                    if formatter in self.binaryFormattersOrPlugins or plugin in self.binaryFormattersOrPlugins:
+                    if (outputFormat == 'binary'):
                         if not binPayloadGenerated:
                             logging.debug(f"[{chain['name']}] Writing the first binary payload found for plugin use")
                             with open(fb.name, mode='wb') as ft:

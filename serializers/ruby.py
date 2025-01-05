@@ -23,18 +23,18 @@ class Ruby(Serializer):
         self.addGadget('oj-rce-ruby-3.3', 'rce', 'oj/3.3/oj-rce-ruby-3.3.json', 'json')
         self.addGadget('ox-detection-ruby-3.3', 'http-get', 'ox/3.3/ox-detection-ruby-3.3.xml', 'xml')
         self.addGadget('ox-rce-ruby-3.3', 'rce', 'ox/3.3/ox-rce-ruby-3.3.xml', 'xml')
-        self.addGadget('yaml-detection-ruby-3.3', 'http-get', 'yaml/3.3/yaml-detection-ruby-3.3.yml', 'yml')
-        self.addGadget('yaml-rce-ruby-3.3', 'rce', 'yaml/3.3/yaml-rce-ruby-3.3.yml', 'yml')
+        self.addGadget('yaml-detection-ruby-3.3', 'http-get', 'yaml/3.3/yaml-detection-ruby-3.3.yml', 'yaml')
+        self.addGadget('yaml-rce-ruby-3.3', 'rce', 'yaml/3.3/yaml-rce-ruby-3.3.yml', 'yaml')
         
     
-    def addGadget(self, name, type, file, formatter):
+    def addGadget(self, name, type, file, format):
         self.gadgets.append({
             'id': name,
             'name': name,
-            'description': f'{name}: {type} {formatter}',
+            'description': f'{name}: {type} {format}',
             'type': type,
             'file': file,
-            'formatter': formatter,
+            'output': format,
         })
 
     def exists(self):
@@ -82,6 +82,10 @@ class Ruby(Serializer):
 
             if not os.path.isfile(filePath):
                 logging.warning(f"[{chain['name']}] Skipping chain because payload file {filePath} does not exit")
+                continue
+
+            if self.chainOpts.format != None and self.chainOpts.format != chain['output']:
+                logging.debug(f"[{chain['name']}] Skipping chain of format '{chain['output']}'")
                 continue
 
             logging.info(f"[{chain['name']}] Generating payload")
@@ -134,7 +138,7 @@ class Ruby(Serializer):
             logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
 
             # binary formatters can be encoded
-            if chain['formatter'] == 'binary':
+            if chain['output'] == 'binary':
                 # output of binary ruby payload is hexdump and this is the last line
                 # there is print garbadge at the beginning
                 # browse output backwards
