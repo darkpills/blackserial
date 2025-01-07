@@ -70,6 +70,7 @@ class YSOSerialNet(Serializer):
         'MessagePackTypelessLz4': 'binary',
         'SharpSerializerBinary': 'binary',
         'TransactionManagerReenlist': 'binary',
+        'QueryPartitionProvider': 'binary',
         'LosFormatter': 'base64',
         'Json.Net': 'json',
         'JavaScriptSerializer.txt': 'json',
@@ -285,13 +286,13 @@ class YSOSerialNet(Serializer):
                         continue
 
                     if '<url>' in format and not interact_domain:
-                        logging.warning(f"[{chain['name']}] Skipping payload with formattter {formatter} because it requires a remote DLL URL")
+                        logging.warning(f"[{chain['name']}] Skipping payload with formatter {formatter} because it requires a remote DLL URL")
                         continue
                     if '<net_remoting_url>' in format and not csharp_net_remoting:
-                        logging.warning(f"[{chain['name']}] Skipping payload with formattter {formatter} because it requires a .Net Remoting URL")
+                        logging.warning(f"[{chain['name']}] Skipping payload with formatter {formatter} because it requires a .Net Remoting URL")
                         continue
                     if '<unc>' in format and not interact_domain:
-                        logging.warning(f"[{chain['name']}] Skipping payload with formattter {formatter} because it requires a UNC DLL path")
+                        logging.warning(f"[{chain['name']}] Skipping payload with formatter {formatter} because it requires a UNC DLL path")
                         continue
 
                     logging.info(f"[{chain['name']}] Generating payload with formatter '{formatter}'")
