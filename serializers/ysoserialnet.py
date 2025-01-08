@@ -270,10 +270,15 @@ class YSOSerialNet(Serializer):
 
                 for format in chain['formats']:
 
-                    if formatter in self.formattersFormat:
-                        outputFormat = self.formattersFormat[formatter]
-                    elif plugin in self.formattersFormat:
+                    plugin = chain['name'].split('/')[0]
+                    gadget = chain['name'].split('/')[1] if len(chain['name'].split('/')) > 1 else chain['name']
+
+                    if plugin in self.formattersFormat:
                         outputFormat = self.formattersFormat[plugin]
+                    elif gadget in self.formattersFormat:
+                        outputFormat = self.formattersFormat[gadget]
+                    elif formatter in self.formattersFormat:
+                        outputFormat = self.formattersFormat[formatter]
                     else:
                         outputFormat = 'binary'
 
@@ -294,11 +299,12 @@ class YSOSerialNet(Serializer):
                     if '<unc>' in format and not interact_domain:
                         logging.warning(f"[{chain['name']}] Skipping payload with formatter {formatter} because it requires a UNC DLL path")
                         continue
+                    if '<local_gadget_file>' in format and not binPayloadGenerated:
+                        logging.error(f"[{chain['name']}] Cannot generate payload because the gadget requires a payload bin file to be generated first. By lazyness, the tool used the first generated one. You must use ysoserial.exe directly for that.")
+                        continue
+
 
                     logging.info(f"[{chain['name']}] Generating payload with formatter '{formatter}'")
-
-                    plugin = chain['name'].split('/')[0]
-                    gadget = chain['name'].split('/')[1] if len(chain['name'].split('/')) > 1 else chain['name']
 
                     chain_system_command = system_command
                     chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
