@@ -162,8 +162,8 @@ class Pickle(Serializer):
             chainArguments = format
             chainArguments = chainArguments.replace('<system_command>', chain_system_command)
             chainArguments = chainArguments.replace('<code>', chain_py_code)
-            chainArguments = chainArguments.replace('<domain>', str(interact_domain))
-            chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/?{chain['id']}")
+            chainArguments = chainArguments.replace('<domain>', f"{chain['id']}.{interact_domain}")
+            chainArguments = chainArguments.replace('<url>', f"https://{chain['id']}.{interact_domain}/?{chain['id']}")
             chainArguments = chainArguments.replace('<remote_file_to_read>', remote_file_to_read)
             chainArguments = chainArguments.replace('<remote_file_to_write>', remote_file_to_write.replace('%%ext%%', 'py'))
             chainArguments = chainArguments.replace('<content>', chain_remote_content)

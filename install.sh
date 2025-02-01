@@ -28,7 +28,22 @@ fi
 
 if [ ! -f marshalsec-all.jar ]; then
     echo "Installing Marshalsec"
-    cp ../archives/marshalsec-0.0.3-SNAPSHOT-all.jar marshalsec-all.jar
+    command -v mvn >/dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "Maven found, building jar"
+        git clone https://github.com/mbechler/marshalsec
+        cd marshalsec
+        mvn clean package -DskipTests
+        cd ..
+    fi
+
+    if [ -f ./marshalsec/target/marshalsec-0.0.3-SNAPSHOT-all.jar ]; then
+        echo "Copying Marshalsec built from maven"
+        cp ./marshalsec/target/marshalsec-0.0.3-SNAPSHOT-all.jar marshalsec-all.jar
+    else
+        echo "Copying Marshalsec from archive"
+        cp ../archives/marshalsec-0.0.3-SNAPSHOT-all.jar marshalsec-all.jar
+    fi
     echo "Marshalsec installed"
 fi
 
@@ -87,5 +102,13 @@ python3 -c "import pickle;" 2>&1 || {
     echo "Installing pickle";
     pip3 install pickledb; 
 }
+
+if [ ! -d deser-node ]; then
+    echo "Installing Deser-Node"
+    git clone https://github.com/klezVirus/deser-node
+    cd deser-node
+    npm install yargs node-serialize funcster cryo
+    cd ..
+fi
 
 echo "Everything seems to be installed now"

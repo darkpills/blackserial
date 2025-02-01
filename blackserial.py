@@ -55,6 +55,8 @@ def createGenerator(serializer, args):
         generator = YSOSerialNet(args.wine_path, args.ysoserial_net_path, args)
     elif serializer == 'ruby-unsafe-deserialization':
         generator = Ruby(args.ruby_path, args.ruby_payload_path, args)
+    elif serializer == 'deser-node':
+        generator = DeserNode(args.node_path, args.deser_node_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
         generator = None
@@ -72,6 +74,7 @@ if __name__ == '__main__':
         'python': ['pickle'],
         'csharp': ['ysoserial.net'],
         'ruby': ['ruby-unsafe-deserialization'],
+        'nodejs': ['deser-node']
     }
     available_languages = list(language_serializer_map.keys())
     available_serializers = []
@@ -79,7 +82,7 @@ if __name__ == '__main__':
         available_serializers = available_serializers + language_serializer_map[l]
 
 
-    parser = argparse.ArgumentParser(prog='BlackSerial', description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(prog=title, description=description, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('chains', help="Specific gadget chain to generate", nargs='*') 
 
@@ -146,6 +149,11 @@ if __name__ == '__main__':
     ruby_group.add_argument('--ruby-path', help="Full path to ruby bin", default="ruby")
     ruby_group.add_argument('--ruby-payload-path', help="Full path to ruby-unsafe-deserialization directory", default="./bin/ruby-unsafe-deserialization")
 
+    # ruby specific
+    js_group = parser.add_argument_group('javascript')
+    js_group.add_argument('--node-path', help="Full path to node bin", default="node")
+    js_group.add_argument('--deser-node-path', help="Full path to deser-node directory", default="./bin/deser-node")
+
     args = parser.parse_args()
 
     setupLogging(args.no_color, args.verbose)
@@ -179,6 +187,11 @@ if __name__ == '__main__':
         serializers = language_serializer_map[args.serializer]
     else:
         serializers = [args.serializer]
+
+    # delete existing payload file
+    if not args.list and args.output and args.output != '-' and os.path.exists(args.output) and os.path.isfile(args.output):
+        logging.info(f"Removing existing payload file {args.output}")
+        os.remove(args.output)
         
     for serializer in serializers:
 
@@ -208,11 +221,6 @@ if __name__ == '__main__':
             continue
         
         else:
-
-            # delete existing payload file
-            if args.output and args.output != '-' and os.path.exists(args.output) and os.path.isfile(args.output):
-                logging.info(f"Removing existing payload file {args.output}")
-                os.remove(args.output)
 
             if args.chains:
                 finalChains = []
