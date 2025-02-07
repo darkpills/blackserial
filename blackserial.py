@@ -70,6 +70,14 @@ def createGenerator(serializer, args):
 if __name__ == '__main__':
 
     title = "BlackSerial"
+    banner = """
+     ____  _            _     ____            _       _ 
+    | __ )| | __ _  ___| | __/ ___|  ___ _ __(_) __ _| |
+    |  _ \| |/ _` |/ __| |/ /\___ \ / _ \ '__| |/ _` | |
+    | |_) | | (_| | (__|   <  ___) |  __/ |  | | (_| | |
+    |____/|_|\__,_|\___|_|\_\|____/ \___|_|  |_|\__,_|_|
+
+"""
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
     default_system_command = 'nslookup %%chain_id%%.%%domain%%'
     language_serializer_map = {
@@ -153,7 +161,7 @@ if __name__ == '__main__':
     ruby_group.add_argument('--ruby-path', help="Full path to ruby bin", default="ruby")
     ruby_group.add_argument('--ruby-payload-path', help="Full path to ruby-unsafe-deserialization directory", default="./bin/ruby-unsafe-deserialization")
 
-    # ruby specific
+    # nodejs specific
     js_group = parser.add_argument_group('javascript')
     js_group.add_argument('--node-path', help="Full path to node bin", default="node")
     js_group.add_argument('--deser-node-path', help="Full path to deser-node directory", default="./bin/deser-node")
@@ -162,24 +170,7 @@ if __name__ == '__main__':
 
     setupLogging(args.no_color, args.verbose)
 
-    logging.info(title)
-
-    if '%%domain%%' in args.system_command and args.interact_domain == None and args.system_command == default_system_command:
-        logging.warning("Defaulting to 'whoami' payload since no interact domain provided")
-        args.system_command = 'whoami'
-    elif '%%domain%%' in args.system_command and args.interact_domain == None:
-        logging.error(f"No interact domain provided, but %%domain%% placeholder found in system command: {args.system_command}")
-        logging.error(f"Use --interact-domain <mydomain> option")
-        sys.exit(-1)
-    if str(args.interact_domain) == '':
-        logging.warning("No interact domain provided, strongly recommanded for out of band detection")
-        logging.warning(f"Use --interact-domain <mydomain> option")
-
-
-    if not args.one_file_per_payload and os.path.isfile(args.output):
-        logging.debug(f"Emptying output file {args.output}")
-        f = open(args.output, 'wb')
-        f.close()
+    print(banner)
 
     count = 0
     if args.serializer == None:
@@ -192,10 +183,28 @@ if __name__ == '__main__':
     else:
         serializers = [args.serializer]
 
-    # delete existing payload file
-    if not args.list and args.output and args.output != '-' and os.path.exists(args.output) and os.path.isfile(args.output):
-        logging.info(f"Removing existing payload file {args.output}")
-        os.remove(args.output)
+    if not args.list:
+        if '%%domain%%' in args.system_command and args.interact_domain == None and args.system_command == default_system_command:
+            logging.warning("No interact domain provided, defaulting to 'whoami' payload")
+            args.system_command = 'whoami'
+        elif '%%domain%%' in args.system_command and args.interact_domain == None:
+            logging.error(f"No interact domain provided, but %%domain%% placeholder found in system command: {args.system_command}")
+            logging.error(f"Use --interact-domain <mydomain> option")
+            sys.exit(-1)
+        if str(args.interact_domain) == '':
+            logging.warning("No interact domain provided, strongly recommanded for out of band detection")
+            logging.warning(f"Use --interact-domain <mydomain> option")
+
+
+        if not args.one_file_per_payload and os.path.isfile(args.output):
+            logging.debug(f"Emptying output file {args.output}")
+            f = open(args.output, 'wb')
+            f.close()
+
+        # delete existing payload file
+        if args.output and args.output != '-' and os.path.exists(args.output) and os.path.isfile(args.output):
+            logging.info(f"Removing existing payload file {args.output}")
+            os.remove(args.output)
         
     for serializer in serializers:
 
