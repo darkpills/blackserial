@@ -5,3 +5,5 @@ from .pickle import Pickle
 from .ysoserialnet import YSOSerialNet
 from .ruby import Ruby
 from .desernode import DeserNode
+from .sploits import Sploits
+from .fastjson import Fastjson

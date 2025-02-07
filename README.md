@@ -3,7 +3,7 @@
 ![logo](blackserial.png)
 
 BlackSerial is a **Blackbox pentesting Gadget Chain Serializer** for:
-* Java ([YSOSerial](https://github.com/frohoff/ysoserial), [Marshalsec](https://github.com/mbechler/marshalsec))
+* Java ([YSOSerial](https://github.com/frohoff/ysoserial), [Marshalsec](https://github.com/mbechler/marshalsec), [Sploits](https://github.com/GrrrDog/Sploits), [Fastjson](https://github.com/safe6Sec/Fastjson))
 * PHP ([PHPGGC](https://github.com/ambionics/phpggc))
 * Python ([Pickle](https://docs.python.org/3/library/pickle.html))
 * C#/.Net ([YSOSerial\.Net](https://github.com/pwntester/ysoserial))
@@ -16,8 +16,8 @@ The main objective is to **identify working gadget chains** on a blackbox code b
 
 ## Features
 
-* **320 gadget chains** generated with default options and all possible formatters
-* **7 supported serializers**: PHPGGC (PHP), YSOSerial (Java), Marshalsec (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization), Deser-Node (NodeJS)
+* **481 gadget chains** generated with default options and all possible formatters
+* **9 supported serializers**: PHPGGC (PHP), YSOSerial (Java), Marshalsec (Java), Sploits (Java), Fastjson (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization), Deser-Node (NodeJS)
 * **Out of band execution detection first** with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
 * **Fuzz JSON, XML or YAML** by generating payloads by formats for any language: `-f [xml|json|yaml]`
 * **6 output encodings**: Binary, Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`, JSON string `-j`, and any combination like `-b -u`
@@ -86,7 +86,6 @@ python3 blackserial.py -s all -l
 [!] Defaulting to 'whoami' payload since no interact domain provided
 [+] Using serializer ysoserial
 [+] Detected java version: 8
-[+] Loading available chains
 [+] Loaded 34 chains
 AspectJWeaver: <remote_file>;<base64>
 BeanShell1: <system_command>
@@ -124,28 +123,187 @@ Vaadin1: <system_command>
 Wicket1: writeB64;<remote_dir>;<base64> | writeOldB64;<remote_file>;<base64>
 [+] Using serializer marshalsec
 [+] Detected java version: 8
-[+] Loading available chains
-[+] Loaded 18 chains
-BlazeDSAMF0: SpringPropertyPathFactory | C3P0WrapperConnPool
-BlazeDSAMF3: UnicastRef | SpringPropertyPathFactory | C3P0WrapperConnPool
-BlazeDSAMFX: UnicastRef | SpringPropertyPathFactory | C3P0WrapperConnPool
-Hessian: SpringPartiallyComparableAdvisorHolder | SpringAbstractBeanFactoryPointcutAdvisor | Rome | XBean | Resin
-Hessian2: SpringPartiallyComparableAdvisorHolder | SpringAbstractBeanFactoryPointcutAdvisor | Rome | XBean | Resin
-Burlap: SpringPartiallyComparableAdvisorHolder | SpringAbstractBeanFactoryPointcutAdvisor | Rome | XBean | Resin
-Castor: SpringAbstractBeanFactoryPointcutAdvisor | C3P0WrapperConnPool
-Jackson: UnicastRemoteObject | SpringPropertyPathFactory | SpringAbstractBeanFactoryPointcutAdvisor | C3P0WrapperConnPool | C3P0RefDataSource | JdbcRowSet | Templates
-Java: XBean | CommonsBeanutils
-JsonIO: UnicastRef | UnicastRemoteObject | Groovy | SpringAbstractBeanFactoryPointcutAdvisor | Rome | XBean | Resin | LazySearchEnumeration
-JYAML: C3P0WrapperConnPool | C3P0RefDataSource | JdbcRowSet
-Kryo: SpringAbstractBeanFactoryPointcutAdvisor | CommonsBeanutils
-KryoAltStrategy: Groovy | SpringPartiallyComparableAdvisorHolder | SpringAbstractBeanFactoryPointcutAdvisor | Rome | XBean | Resin | LazySearchEnumeration | BindingEnumeration | ServiceLoader | ImageIO | CommonsBeanutils
-Red5AMF0: SpringPropertyPathFactory | C3P0WrapperConnPool | JdbcRowSet
-Red5AMF3: SpringPropertyPathFactory | C3P0WrapperConnPool | JdbcRowSet
-SnakeYAML: UnicastRemoteObject | SpringPropertyPathFactory | SpringAbstractBeanFactoryPointcutAdvisor | XBean | CommonsConfiguration | C3P0WrapperConnPool | C3P0RefDataSource | JdbcRowSet | ScriptEngine | ResourceGadget
-XStream: SpringPartiallyComparableAdvisorHolder | SpringAbstractBeanFactoryPointcutAdvisor | Rome | XBean | Resin | CommonsConfiguration | LazySearchEnumeration | BindingEnumeration | ServiceLoader | ImageIO | CommonsBeanutils
-YAMLBeans: C3P0WrapperConnPool
+[+] Loaded 86 chains
+BlazeDSAMF0/SpringPropertyPathFactory
+BlazeDSAMF0/C3P0WrapperConnPool
+BlazeDSAMF3/UnicastRef
+BlazeDSAMF3/SpringPropertyPathFactory
+BlazeDSAMF3/C3P0WrapperConnPool
+BlazeDSAMFX/UnicastRef
+BlazeDSAMFX/SpringPropertyPathFactory
+BlazeDSAMFX/C3P0WrapperConnPool
+Hessian/SpringPartiallyComparableAdvisorHolder
+Hessian/SpringAbstractBeanFactoryPointcutAdvisor
+Hessian/Rome
+Hessian/XBean
+Hessian/Resin
+Hessian2/SpringPartiallyComparableAdvisorHolder
+Hessian2/SpringAbstractBeanFactoryPointcutAdvisor
+Hessian2/Rome
+Hessian2/XBean
+Hessian2/Resin
+Burlap/SpringPartiallyComparableAdvisorHolder
+Burlap/SpringAbstractBeanFactoryPointcutAdvisor
+Burlap/Rome
+Burlap/XBean
+Burlap/Resin
+Castor/SpringAbstractBeanFactoryPointcutAdvisor
+Castor/C3P0WrapperConnPool
+Jackson/UnicastRemoteObject
+Jackson/SpringPropertyPathFactory
+Jackson/SpringAbstractBeanFactoryPointcutAdvisor
+Jackson/C3P0WrapperConnPool
+Jackson/C3P0RefDataSource
+Jackson/JdbcRowSet
+Jackson/Templates
+Java/XBean
+Java/CommonsBeanutils
+JsonIO/UnicastRef
+JsonIO/UnicastRemoteObject
+JsonIO/Groovy
+JsonIO/SpringAbstractBeanFactoryPointcutAdvisor
+JsonIO/Rome
+JsonIO/XBean
+JsonIO/Resin
+JsonIO/LazySearchEnumeration
+JYAML/C3P0WrapperConnPool
+JYAML/C3P0RefDataSource
+JYAML/JdbcRowSet
+Kryo/SpringAbstractBeanFactoryPointcutAdvisor
+Kryo/CommonsBeanutils
+KryoAltStrategy/Groovy
+KryoAltStrategy/SpringPartiallyComparableAdvisorHolder
+KryoAltStrategy/SpringAbstractBeanFactoryPointcutAdvisor
+KryoAltStrategy/Rome
+KryoAltStrategy/XBean
+KryoAltStrategy/Resin
+KryoAltStrategy/LazySearchEnumeration
+KryoAltStrategy/BindingEnumeration
+KryoAltStrategy/ServiceLoader
+KryoAltStrategy/ImageIO
+KryoAltStrategy/CommonsBeanutils
+Red5AMF0/SpringPropertyPathFactory
+Red5AMF0/C3P0WrapperConnPool
+Red5AMF0/JdbcRowSet
+Red5AMF3/SpringPropertyPathFactory
+Red5AMF3/C3P0WrapperConnPool
+Red5AMF3/JdbcRowSet
+SnakeYAML/UnicastRemoteObject
+SnakeYAML/SpringPropertyPathFactory
+SnakeYAML/SpringAbstractBeanFactoryPointcutAdvisor
+SnakeYAML/XBean
+SnakeYAML/CommonsConfiguration
+SnakeYAML/C3P0WrapperConnPool
+SnakeYAML/C3P0RefDataSource
+SnakeYAML/JdbcRowSet
+SnakeYAML/ScriptEngine
+SnakeYAML/ResourceGadget
+XStream/SpringPartiallyComparableAdvisorHolder
+XStream/SpringAbstractBeanFactoryPointcutAdvisor
+XStream/Rome
+XStream/XBean
+XStream/Resin
+XStream/CommonsConfiguration
+XStream/LazySearchEnumeration
+XStream/BindingEnumeration
+XStream/ServiceLoader
+XStream/ImageIO
+XStream/CommonsBeanutils
+YAMLBeans/C3P0WrapperConnPool
+[+] Using serializer sploits
+[+] Loaded 3 chains
+Genson error-based detection
+Flexjson error-based detection
+Jodd datasource deserialization
+[+] Using serializer fastjson
+[+] Loaded 86 chains
+Fastjson JdbcRowSetImpl RMI 1.1.15 < 1.2.24
+Fastjson JdbcRowSetImpl LDAP 1.1.15 < 1.2.24
+Fastjson Universal ParseObject RMI
+Fastjson LDAP 1.2.9 < 1.2.47
+Fastjson Universal ParseObject LDAP
+Fastjson ReDOS 1.2.36 < 1.2.62
+Fastjson DNS < 1.2.43 (1)
+Fastjson DNS < 1.2.43 (2)
+Fastjson DNS < 1.2.48
+Fastjson DNS < 1.2.68 (1)
+Fastjson DNS < 1.2.68 (2)
+Fastjson DNS < 1.2.68 (3)
+Fastjson DNS < 1.2.68 (4)
+Fastjson DNS < 1.2.68 (5)
+Fastjson DNS < 1.2.68 (6)
+Fastjson DNS < 1.2.68 (7)
+Fastjson DNS < 1.2.68 (8)
+Fastjson DNS < 1.2.68 (9)
+Fastjson RCE DNS 1.2.47
+Fastjson RCE DNS 1.2.68
+Fastjson RCE DNS 1.2.80 or 1.2.83
+Fastjson DNS dependencies detection
+Fastjson Aspectj + ognl file read
+Fastjson commons-io + ognl + URLReader single-byte file reading 1
+Fastjson commons-io + ognl + URLReader single-byte file reading 2
+Fastjson commons-io + ognl + URLReader single-byte file reading 3
+Fastjson commons-io + ognl + URLReader single-byte file reading 4
+Fastjson aspectj read file + character error echo
+Fastjson groovy remote class loading
+Fastjson c3p0#JndiRefForwardingDataSource RMI 1.2.22 < 1.2.24
+Fastjson c3p0#JndiRefForwardingDataSource LDAP 1.2.22 < 1.2.24
+Fastjson shiro#JndiObjectFactory RMI 1.2.22 < 1.2.24
+Fastjson shiro#JndiObjectFactory LDAP 1.2.22 < 1.2.24
+Fastjson shiro#JndiRealmFactory RMI 1.2.22 < 1.2.24
+Fastjson shiro#JndiRealmFactory LDAP 1.2.22 < 1.2.24
+Fastjson JdbcRowSetImpl L bypass RMI 1.1.15 < 1.2.24
+Fastjson JdbcRowSetImpl L bypass LDAP 1.1.15 < 1.2.24
+Fastjson JdbcRowSetImpl LL bypass RMI 1.1.15 < 1.2.24
+Fastjson JdbcRowSetImpl LL bypass LDAP 1.1.15 < 1.2.24
+Fastjson JdbcRowSetImpl [{ bypass RMI 1.2.25 < 1.2.43
+Fastjson JdbcRowSetImpl [{ bypass LDAP 1.2.25 < 1.2.43
+Fastjson Mybatis RMI 1.2.25 < 1.2.45
+Fastjson Mybatis LDAP 1.2.25 < 1.2.45
+Fastjson MapCache RMI 1.2.25 < 1.2.47
+Fastjson MapCache LDAP 1.2.25 < 1.2.47
+Fastjson Regex DOS 1.2.36 < 1.2.62 (1)
+Fastjson Regex DOS 1.2.36 < 1.2.62 (2)
+Fastjson HikariConfig RMI 1.2.5 <= 1.2.59 (1)
+Fastjson HikariConfig LDAP 1.2.5 <= 1.2.59 (1)
+Fastjson HikariConfig RMI 1.2.5 <= 1.2.59 (2)
+Fastjson HikariConfig LDAP 1.2.5 <= 1.2.59 (2)
+Fastjson OracleManagedConnectionFactory RMI 1.2.5 <= 1.2.60
+Fastjson OracleManagedConnectionFactory LDAP 1.2.5 <= 1.2.60
+Fastjson JNDIConfiguration RMI 1.2.5 <= 1.2.60
+Fastjson JNDIConfiguration LDAP 1.2.5 <= 1.2.60
+Fastjson JndiConverter LDAP < 1.2.62
+Fastjson JndiConverter LDAP < 1.2.62
+Fastjson JMSContentInterceptor LDAP < 1.2.62
+Fastjson JMSContentInterceptor LDAP < 1.2.62
+Fastjson Shiro JndiObjectFactory RMI <= 1.2.66
+Fastjson Shiro JndiObjectFactory LDAP <= 1.2.66
+Fastjson Shiro JndiRealmFactory RMI <= 1.2.66
+Fastjson Shiro JndiRealmFactory LDAP <= 1.2.66
+Fastjson Anteros AnterosDBCPConfig RMI <= 1.2.66 (1)
+Fastjson Anteros AnterosDBCPConfig LDAP <= 1.2.66 (1)
+Fastjson Anteros AnterosDBCPConfig RMI <= 1.2.66 (2)
+Fastjson Anteros AnterosDBCPConfig LDAP <= 1.2.66 (2)
+Fastjson Ignite CacheJndiTmLookup RMI <= 1.2.66
+Fastjson Ignite CacheJndiTmLookup LDAP <= 1.2.66
+Fastjson SQLmap JtaTransactionConfig RMI <= 1.2.66
+Fastjson SQLmap JtaTransactionConfig LDAP <= 1.2.66
+Fastjson Ignite CacheJndiTmLookup RMI <= 1.2.67
+Fastjson Ignite CacheJndiTmLookup LDAP <= 1.2.67
+Fastjson Shiro JndiObjectFactory RMI <= 1.2.67
+Fastjson Shiro JndiObjectFactory LDAP <= 1.2.67
+Fastjson Hadoop HikariConfig RMI <= 1.2.68 (1)
+Fastjson Hadoop HikariConfig LDAP <= 1.2.68 (1)
+Fastjson Hadoop HikariConfig RMI <= 1.2.68 (2)
+Fastjson Hadoop HikariConfig LDAP <= 1.2.68 (2)
+Fastjson Caucho ResourceRef RMI <= 1.2.68
+Fastjson Caucho ResourceRef LDAP <= 1.2.68
+Fastjson Aries RecoverablePooledConnectionFactory RMI <= ?
+Fastjson Aries RecoverablePooledConnectionFactory LDAP <= ?
+Fastjson Aries XaPooledConnectionFactory RMI <= ?
+Fastjson Aries XaPooledConnectionFactory LDAP <= ?
+Fastjson Groovy HTTP 1.2.76 <= v < 1.2.83
 [+] Using serializer phpggc
-[+] Loading available chains
 [+] Loaded 135 chains
 Bitrix/RCE1: RCE: Function Call
 CakePHP/RCE1: RCE: Command
@@ -283,7 +441,6 @@ ZendFramework/RCE3: RCE: Function Call
 ZendFramework/RCE4: RCE: PHP Code
 ZendFramework/RCE5: RCE: Function Call
 [+] Using serializer pickle
-[+] Loading available chains
 [+] Loaded 6 chains
 PickleSystemCommand: <system_command>
 PickleCode: <code>
@@ -292,7 +449,6 @@ PickleHttpGet: <url>
 PickleFileWrite: <remote_file_to_write>;<content>
 PickleFileRead: <remote_file_to_read>
 [+] Using serializer ysoserial.net
-[+] Loading available chains
 [+] Loaded 48 chains
 ActivitySurrogateDisableTypeCheck: BinaryFormatter | LosFormatter | NetDataContractSerializer | SoapFormatter
 ActivitySurrogateSelector: BinaryFormatter | LosFormatter | SoapFormatter
@@ -343,7 +499,6 @@ ThirdPartyGadgets/SingleProcessFileAppender: Json.Net
 ThirdPartyGadgets/FileDataStore: Json.Net
 TransactionManagerReenlist
 [+] Using serializer ruby-unsafe-deserialization
-[+] Loading available chains
 [+] Loaded 8 chains
 marshal-rce-ruby-3.2.4: rce binary
 marshal-rce-ruby-3.4-rc: rce binary
@@ -353,7 +508,12 @@ ox-detection-ruby-3.3: http-get xml
 ox-rce-ruby-3.3: rce xml
 yaml-detection-ruby-3.3: http-get yaml
 yaml-rce-ruby-3.3: rce yaml
-[+] Listed 249 gadget chains
+[+] Using serializer deser-node
+[+] Loaded 3 chains
+node-serialize
+funcster
+cryo
+[+] Listed 409 gadget chains
 [+] Happy hunting!
 ```
 
@@ -440,7 +600,7 @@ I chose only plugins that are autonomous and do not require extra information. V
 ## TODO
 
 * resx file generation support
-* integrate https://github.com/klezVirus/deser-node
+* Test on windows
 
 
 ## ⚠️ WARNING: LEGAL DISCLAIMER

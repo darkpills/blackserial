@@ -57,6 +57,10 @@ def createGenerator(serializer, args):
         generator = Ruby(args.ruby_path, args.ruby_payload_path, args)
     elif serializer == 'deser-node':
         generator = DeserNode(args.node_path, args.deser_node_path, args)
+    elif serializer == 'sploits':
+        generator = Sploits(args)
+    elif serializer == 'fastjson':
+        generator = Fastjson(args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
         generator = None
@@ -69,7 +73,7 @@ if __name__ == '__main__':
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
     default_system_command = 'nslookup %%chain_id%%.%%domain%%'
     language_serializer_map = {
-        'java': ['ysoserial', 'marshalsec'],
+        'java': ['ysoserial', 'marshalsec', 'sploits', 'fastjson'],
         'php': ['phpggc'],
         'python': ['pickle'],
         'csharp': ['ysoserial.net'],
@@ -209,8 +213,7 @@ if __name__ == '__main__':
             logging.critical(f'The program could not be found. Make sure it is installed or in the PATH and all binaries reachable')
             sys.exit(-1)
 
-        # for each php function specified in argument
-        logging.info(f"Loading available chains")
+        # load chains
         chains = generator.chains()
         logging.info(f"Loaded {len(chains)} chains")
 
