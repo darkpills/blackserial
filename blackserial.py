@@ -191,7 +191,7 @@ if __name__ == '__main__':
             logging.error(f"No interact domain provided, but %%domain%% placeholder found in system command: {args.system_command}")
             logging.error(f"Use --interact-domain <mydomain> option")
             sys.exit(-1)
-        if str(args.interact_domain) == '':
+        if args.interact_domain == None:
             logging.warning("No interact domain provided, strongly recommanded for out of band detection")
             logging.warning(f"Use --interact-domain <mydomain> option")
 
