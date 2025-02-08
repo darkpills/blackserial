@@ -2,6 +2,8 @@
 
 ![logo](blackserial.png)
 
+![Supported Python versions](https://img.shields.io/badge/python-3.11+-blue.svg) [![License](https://img.shields.io/badge/license-GPLv3-red.svg)](https://raw.githubusercontent.com/darkpills/blackserial/master/LICENSE) [![Twitter](https://img.shields.io/twitter/follow/darkpills?label=darkpills&style=social)](https://twitter.com/intent/follow?screen_name=darkpills)
+
 BlackSerial is a **Blackbox pentesting Gadget Chain Serializer** for:
 * Java ([YSOSerial](https://github.com/frohoff/ysoserial), [Marshalsec](https://github.com/mbechler/marshalsec), [Sploits](https://github.com/GrrrDog/Sploits), [Fastjson](https://github.com/safe6Sec/Fastjson))
 * PHP ([PHPGGC](https://github.com/ambionics/phpggc))
@@ -10,7 +12,9 @@ BlackSerial is a **Blackbox pentesting Gadget Chain Serializer** for:
 * Ruby ([GitHubSecurityLab/ruby-unsafe-deserialization](https://github.com/GitHubSecurityLab/ruby-unsafe-deserialization/))
 * NodeJS ([deser-node](https://github.com/klezVirus/deser-node))
 
-It is designed to **bruteforce gadget chains** on deserialization endpoints in blackbox or **fuzz XML, JSON or YAML input** to detect deserialization. It prioritizes out of band interact/collaborator dns callback to identify a working chain.
+It is designed to **bruteforce gadget chains** on deserialization endpoints in blackbox or **fuzz XML, JSON or YAML input** to detect deserialization, like [Freddy](https://portswigger.net/bappstore/ae1cce0c6d6c47528b4af35faebc3ab3).
+
+It prioritizes out of band interact/collaborator dns callback to identify a working chain.
 
 The main objective is to **identify working gadget chains** on a blackbox code base and **which one worked**, not to make the full RCE exploitation.
 
@@ -18,18 +22,16 @@ The main objective is to **identify working gadget chains** on a blackbox code b
 
 * **481 gadget chains** generated with default options and all possible formatters
 * **9 supported serializers**: PHPGGC (PHP), YSOSerial (Java), Marshalsec (Java), Sploits (Java), Fastjson (Java), YSOSerial\.Net (C# .Net), Pickle (Python), Ruby (GitHubSecurityLab/ruby-unsafe-deserialization), Deser-Node (NodeJS)
-* **Out of band execution detection first** with DNS callback to `<chain_id>.<interact_domain>`, like `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
+* **Out of band execution detection** with DNS callback formatted like `<chain_id>.<interact_domain>`, example: `oj-detection-ruby-3.3.ctj7qmhpf81f7c6r97s0js9ea8i9xkjwp.oast.online`
 * **Fuzz JSON, XML or YAML** by generating payloads by formats for any language: `-f [xml|json|yaml]`
 * **6 output encodings**: Binary, Base64 `-b`, URL `-u`, Base64 URL safe `-ub`, Hex string `-x`, JSON string `-j`, and any combination like `-b -u`
-* Isolates unsafe gadgets with `--unsafe` option: DoS and file deletion
-* Can generates all payloads in 1 file and remove line feed `\n` of non binary chains (json, yaml, xml) when put in 1 file
+* DoS and file deletion gadgets with `--unsafe` option (default false)
 * Can generate 1 file by payload with `-o1` in the format `<chain_name>.txt`. Usefull when you have non binary gadget chains like json, yaml, xml
 * Can generates 1 gadget chain only by its name
 * Phar output support with optional JPEG polyglot
 
-Note: a similar project exists but for ysoserial only and do not work for all payloads: https://github.com/aludermin/ysoserial-wrapper
+A similar project exists but for ysoserial only and do not work for all payloads: https://github.com/aludermin/ysoserial-wrapper
 
-Note2: Burp extension [Freddy](https://portswigger.net/bappstore/ae1cce0c6d6c47528b4af35faebc3ab3) does a similar job for fuzzing XML, JSON or YAML input. Blackserial implements more payloads but contrary to Freddy does not implement ping time-based or error-based detection.
 
 ## Basic usage
 
@@ -44,7 +46,6 @@ python3 blackserial.py -s php -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 
 [+] BlackSerial
 [+] Using serializer phpggc
-[+] Loading available chains
 [+] Loaded 135 chains
 [+] Removing existing payload file payloads.txt
 [+] Interact domain: ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
@@ -66,12 +67,17 @@ python3 blackserial.py -s php -b -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 [+] Generated 118 payloads to payloads.txt
 [+] Happy hunting!
 ```
-Then use `payloads.txt` in Burp Intruder for example.
+Then use `payloads.txt` in Burp Intruder for example:
+
+![Example of PHP base64 payload with burp intruder](images/burp-intruder-base64-example.png)
 
 Generate all JSON payloads independantly of the technology for blind deserialization detection:
 ```
 python3 blackserial.py -s all -f json -i ddumqtbjx6q509qib6tiuiyds4yvmlaa.oastify.com
 ```
+
+And then fuzz the whole JSON body with Burp:
+![Example of JSON payload with burp intruder](images/burp-intruder-json-example.png)
 
 For manually input XML or JSON payloads in repeater, generates gadgets with 1 file by payload:
 ```
@@ -595,7 +601,6 @@ I chose only plugins that are autonomous and do not require extra information. V
 * ysoserial\.net: TypeConfuseDelegateMono
 * ysoserial\.net: XamlAssemblyLoadFromFile with formatter 'SoapFormatter'
 * phpggc: Symfony/RCE14 ([PR opened](https://github.com/ambionics/phpggc/pull/204))
-* marshalsec: ServiceLoader ([Issue opened](https://github.com/mbechler/marshalsec/issues/44))
 
 ## TODO
 
