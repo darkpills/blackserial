@@ -1,7 +1,6 @@
 import re
 import logging
 import os
-import base64
 from .serializer import Serializer
 
 class Marshalsec(Serializer):
@@ -85,6 +84,9 @@ class Marshalsec(Serializer):
         super().__init__(bin, chainOpts)
 
     def exists(self):
+        if not os.path.isfile(self.javaPath):
+            logging.error(f"Java bin path not found: {self.javaPath}")
+            return False
         result = super().exists('marshalsec.Java')
         if not result:
             return False
@@ -206,6 +208,8 @@ class Marshalsec(Serializer):
                 if not self.chainOpts.one_file_per_payload:
                     payload = payload.decode('utf-8').replace('\r', '').replace('\n', '').encode('utf-8')
             
+            payload = self.encode(payload)
+
             self.output(chain['id'], payload+b"\n")
             count = count + 1
             
