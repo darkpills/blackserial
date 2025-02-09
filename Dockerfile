@@ -1,27 +1,41 @@
 # syntax=docker/dockerfile:1
-FROM debian:bookworm
+
+# Building dependencies
+
+FROM debian:bookworm AS builder
+
+WORKDIR /build/
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy project files to image
-WORKDIR /app
-COPY . .
-RUN rm -rf ./bin/* *.cache
+# Install APT packages
+RUN apt update -y && apt install -y git maven python3 python3-requests nodejs wget unzip
 
-# Install packages
-RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list.d/debian.sources
-RUN apt update -y && apt install -y \
-    php \
-    python3 \
-    python3-pip \
-    ruby \
-    nodejs \
-    npm \
-    git \
-    wget
+COPY archives .
+COPY install.sh .
 
-# Install dependencies
 RUN bash ./install.sh
+
+# Target image
+
+FROM debian:bookworm
+
+# Copy project files to image
+
+WORKDIR /app
+
+RUN sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list.d/debian.sources
+RUN dpkg --add-architecture i386
+RUN apt update -y && apt install -y --install-recommends mono-complete wine winetricks
+
+RUN winetricks -q dotnet48
+RUN winetricks -q nocrashdialog
+
+
+COPY --from=builder /build/bin /app/
+COPY blackserial.py /app/
+COPY serializers /app/
+
 
 ENTRYPOINT ["python3", "/app/blackserial.py"]
 
