@@ -47,6 +47,22 @@ if [ ! -f marshalsec-all.jar ]; then
     echo "Marshalsec installed"
 fi
 
+if [ ! -f ./jre1.8.0_20/bin/java ]; then
+    echo "Installing JRE 1.8.0u20"
+    cp ../archives/jre-8u20-linux-x64.tar.gz .
+    tar -xzf jre-8u20-linux-x64.tar.gz
+    if [ ! -f ./jre1.8.0_20/bin/java ]; then
+        echo "Error: no ./jre1.8.0_20/bin/java after untar"
+        exit 1
+    fi
+fi
+
+if [ ! -f JRE8Exploit.jar ]; then
+    echo "Installing JRE8Exploit jar"
+    cp ../archives/JRE8Exploit-1.0-SNAPSHOT.jar JRE8Exploit.jar
+    echo "JRE8Exploit jar installed"
+fi
+
 if [ ! -f ysoserial-all.jar ]; then
     echo "Installing ysoserial"
     wget -q https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar  || cp ../archives/ysoserial-all.jar .

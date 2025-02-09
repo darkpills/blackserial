@@ -7,3 +7,4 @@ from .ruby import Ruby
 from .desernode import DeserNode
 from .sploits import Sploits
 from .fastjson import Fastjson
+from .jre8u20rcegadget import JRE8u20RCEGadget

