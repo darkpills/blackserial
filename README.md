@@ -593,6 +593,10 @@ Under linux, blackserial uses wine to launch ysoserial.exe and thus it is slow. 
 
 I chose only plugins that are autonomous and do not require extra information. Viewstate plugin requires encryption key for instance and is excluded.
 
+**Under docker, I've got the error "[!] 0050:err:winediag:nodrv_CreateWindow Application tried to create a window, but no driver could be loaded."**
+
+I did not search too much on this one, but it must be some X11 issue with wine.
+
 **Some gadgets fail to generate**
 
 * ysoserial\.net: ActivitySurrogateDisableTypeCheck
